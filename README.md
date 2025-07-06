@@ -72,7 +72,7 @@ Inspiration : https://github.com/swift502/Sketchbook
 
 ### Clone the repo
 ```bash
-git clone git@github.com:iErcann/Notblox.git
+git clone https://github.com/iErcann/Notblox.git
 cd Notblox
 ```
 
