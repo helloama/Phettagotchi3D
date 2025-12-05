@@ -137,9 +137,12 @@ export class SyncComponentsSystem {
       case SerializedEntityType.EVENT_QUEUE:
         newEntity = EventSystem.getInstance().eventQueue.entity
         break
+      case SerializedEntityType.VEHICLE:
+        newEntity = EntityManager.createEntity(serializedEntity.t, serializedEntity.id)
+        break
       default:
         newEntity = EntityManager.createEntity(serializedEntity.t, serializedEntity.id)
-        console.warn("Unknown entity type, can't create entity")
+        console.log('Unknown entity type, fallbacking to default entity', serializedEntity.t)
         break
     }
     console.log('newEntity', newEntity)
