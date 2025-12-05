@@ -41,7 +41,7 @@
     "eslint-config-next": "^15.1.5",
     "postcss": "latest",
     "serve": "^14.2.4",
-    "tailwindcss": "latest",
+    "tailwindcss": "3.4.18",
     "typescript": "latest"
   }
 }
