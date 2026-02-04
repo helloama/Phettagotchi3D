@@ -36,7 +36,8 @@ export class Player {
     const rotationComponent = new RotationComponent(this.entity.id, 0, 1, 2)
     this.entity.addComponent(rotationComponent)
 
-    const sizeComponent = new SingleSizeComponent(this.entity.id, 1.5 + Math.random())
+    // VRM models need larger scale (around 1.0-1.2 for normal human size)
+    const sizeComponent = new SingleSizeComponent(this.entity.id, 1.0)
     this.entity.addComponent(sizeComponent)
 
     // Player name text on top of the head with offset
