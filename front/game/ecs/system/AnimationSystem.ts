@@ -41,6 +41,7 @@ export class AnimationSystem {
               action.reset()
               action.fadeIn(0.1)
               action.play()
+              console.log(`[AnimDebug] Playing animation "${clip.name}" with ${clip.tracks.length} tracks`)
             }
           }
 

@@ -52,6 +52,20 @@ export class ServerMeshSystem {
         // VRM model - use vrm.scene as animation root
         animationRoot = loadResult.vrm.scene
         console.log(`ServerMeshSystem: VRM entity ${entity.id} - AnimationMixer will target vrm.scene`)
+
+        // DEBUG: Log what objects exist in vrm.scene for animation targeting
+        const targetObjects: string[] = []
+        animationRoot.traverse((obj) => {
+          if (obj.name && obj.name.includes('Normalized')) {
+            targetObjects.push(obj.name)
+          }
+        })
+        console.log(`[AnimDebug] VRM scene has ${targetObjects.length} normalized bones:`, targetObjects.slice(0, 5))
+
+        // DEBUG: Log first animation's track targets
+        if (loadResult.animations.length > 0) {
+          console.log(`[AnimDebug] First animation tracks:`, loadResult.animations[0].tracks.slice(0, 5).map(t => t.name))
+        }
       } else {
         // Regular GLTF - use first child or mesh itself
         animationRoot = loadResult.mesh.children.length > 0 ? loadResult.mesh.children[0] : loadResult.mesh

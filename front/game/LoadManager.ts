@@ -29,8 +29,113 @@ const ANIMATION_STATE_MAP: Record<string, string> = {
   Fall: 'Jump_Loop',
 }
 
-// Blender DEF-* bone name to VRM humanoid bone name mapping
-const blenderVRMRigMap: Record<string, VRMHumanBoneName> = {
+// Comprehensive bone mapping supporting Blender DEF-*, Mixamo, and VRM standard names
+// Based on hyperfy's createEmoteFactory.js normalizedBoneNames mapping
+const boneNameToVRMBone: Record<string, VRMHumanBoneName> = {
+  // === VRM Standard Names (identity mapping) ===
+  'hips': 'hips',
+  'spine': 'spine',
+  'chest': 'chest',
+  'upperChest': 'upperChest',
+  'neck': 'neck',
+  'head': 'head',
+  'leftShoulder': 'leftShoulder',
+  'leftUpperArm': 'leftUpperArm',
+  'leftLowerArm': 'leftLowerArm',
+  'leftHand': 'leftHand',
+  'rightShoulder': 'rightShoulder',
+  'rightUpperArm': 'rightUpperArm',
+  'rightLowerArm': 'rightLowerArm',
+  'rightHand': 'rightHand',
+  'leftUpperLeg': 'leftUpperLeg',
+  'leftLowerLeg': 'leftLowerLeg',
+  'leftFoot': 'leftFoot',
+  'leftToes': 'leftToes',
+  'rightUpperLeg': 'rightUpperLeg',
+  'rightLowerLeg': 'rightLowerLeg',
+  'rightFoot': 'rightFoot',
+  'rightToes': 'rightToes',
+
+  // === Mixamo Rig Names (mixamorigXXX) ===
+  'mixamorigHips': 'hips',
+  'mixamorigSpine': 'spine',
+  'mixamorigSpine1': 'chest',
+  'mixamorigSpine2': 'upperChest',
+  'mixamorigNeck': 'neck',
+  'mixamorigHead': 'head',
+  'mixamorigLeftShoulder': 'leftShoulder',
+  'mixamorigLeftArm': 'leftUpperArm',
+  'mixamorigLeftForeArm': 'leftLowerArm',
+  'mixamorigLeftHand': 'leftHand',
+  'mixamorigRightShoulder': 'rightShoulder',
+  'mixamorigRightArm': 'rightUpperArm',
+  'mixamorigRightForeArm': 'rightLowerArm',
+  'mixamorigRightHand': 'rightHand',
+  'mixamorigLeftUpLeg': 'leftUpperLeg',
+  'mixamorigLeftLeg': 'leftLowerLeg',
+  'mixamorigLeftFoot': 'leftFoot',
+  'mixamorigLeftToeBase': 'leftToes',
+  'mixamorigRightUpLeg': 'rightUpperLeg',
+  'mixamorigRightLeg': 'rightLowerLeg',
+  'mixamorigRightFoot': 'rightFoot',
+  'mixamorigRightToeBase': 'rightToes',
+  // Mixamo finger bones
+  'mixamorigLeftHandThumb1': 'leftThumbMetacarpal',
+  'mixamorigLeftHandThumb2': 'leftThumbProximal',
+  'mixamorigLeftHandThumb3': 'leftThumbDistal',
+  'mixamorigLeftHandIndex1': 'leftIndexProximal',
+  'mixamorigLeftHandIndex2': 'leftIndexIntermediate',
+  'mixamorigLeftHandIndex3': 'leftIndexDistal',
+  'mixamorigLeftHandMiddle1': 'leftMiddleProximal',
+  'mixamorigLeftHandMiddle2': 'leftMiddleIntermediate',
+  'mixamorigLeftHandMiddle3': 'leftMiddleDistal',
+  'mixamorigLeftHandRing1': 'leftRingProximal',
+  'mixamorigLeftHandRing2': 'leftRingIntermediate',
+  'mixamorigLeftHandRing3': 'leftRingDistal',
+  'mixamorigLeftHandPinky1': 'leftLittleProximal',
+  'mixamorigLeftHandPinky2': 'leftLittleIntermediate',
+  'mixamorigLeftHandPinky3': 'leftLittleDistal',
+  'mixamorigRightHandThumb1': 'rightThumbMetacarpal',
+  'mixamorigRightHandThumb2': 'rightThumbProximal',
+  'mixamorigRightHandThumb3': 'rightThumbDistal',
+  'mixamorigRightHandIndex1': 'rightIndexProximal',
+  'mixamorigRightHandIndex2': 'rightIndexIntermediate',
+  'mixamorigRightHandIndex3': 'rightIndexDistal',
+  'mixamorigRightHandMiddle1': 'rightMiddleProximal',
+  'mixamorigRightHandMiddle2': 'rightMiddleIntermediate',
+  'mixamorigRightHandMiddle3': 'rightMiddleDistal',
+  'mixamorigRightHandRing1': 'rightRingProximal',
+  'mixamorigRightHandRing2': 'rightRingIntermediate',
+  'mixamorigRightHandRing3': 'rightRingDistal',
+  'mixamorigRightHandPinky1': 'rightLittleProximal',
+  'mixamorigRightHandPinky2': 'rightLittleIntermediate',
+  'mixamorigRightHandPinky3': 'rightLittleDistal',
+
+  // === Unity/Generic Humanoid Names ===
+  'Hips': 'hips',
+  'Spine': 'spine',
+  'Chest': 'chest',
+  'UpperChest': 'upperChest',
+  'Neck': 'neck',
+  'Head': 'head',
+  'LeftShoulder': 'leftShoulder',
+  'LeftUpperArm': 'leftUpperArm',
+  'LeftLowerArm': 'leftLowerArm',
+  'LeftHand': 'leftHand',
+  'RightShoulder': 'rightShoulder',
+  'RightUpperArm': 'rightUpperArm',
+  'RightLowerArm': 'rightLowerArm',
+  'RightHand': 'rightHand',
+  'LeftUpperLeg': 'leftUpperLeg',
+  'LeftLowerLeg': 'leftLowerLeg',
+  'LeftFoot': 'leftFoot',
+  'LeftToes': 'leftToes',
+  'RightUpperLeg': 'rightUpperLeg',
+  'RightLowerLeg': 'rightLowerLeg',
+  'RightFoot': 'rightFoot',
+  'RightToes': 'rightToes',
+
+  // === Blender DEF-* Names ===
   'DEF-hips': 'hips',
   'DEF-spine.001': 'spine',
   'DEF-spine.002': 'chest',
@@ -85,6 +190,9 @@ const blenderVRMRigMap: Record<string, VRMHumanBoneName> = {
   'DEF-toe.R': 'rightToes',
 }
 
+// Keep alias for backwards compatibility
+const boneNameToVRMBone = boneNameToVRMBone
+
 // Reusable quaternion objects for retargeting
 const q1 = new THREE.Quaternion()
 const restRotationInverse = new THREE.Quaternion()
@@ -129,8 +237,19 @@ export class LoadManager {
             this.baseAnimationsGLTF = gltf
             console.log(`Loaded base animations GLB with ${gltf.animations.length} animations`)
             gltf.animations.forEach((clip: THREE.AnimationClip) => {
-              console.log(`  - ${clip.name} (${clip.duration.toFixed(2)}s)`)
+              console.log(`  - ${clip.name} (${clip.duration.toFixed(2)}s, ${clip.tracks.length} tracks)`)
             })
+            // Log VRMA data if present
+            if (gltf.userData?.vrmAnimations) {
+              console.log(`[VRMAnimation] VRMA data present: ${gltf.userData.vrmAnimations.length} animations`)
+            }
+            // Log first animation track names for debugging
+            if (gltf.animations[0]?.tracks?.length > 0) {
+              console.log(`[Debug] First animation track names (first 5):`)
+              gltf.animations[0].tracks.slice(0, 5).forEach((t: THREE.KeyframeTrack) => {
+                console.log(`    ${t.name}`)
+              })
+            }
             resolve(gltf)
           } else {
             console.warn('No animations found in human-base-animations.glb')
@@ -157,13 +276,43 @@ export class LoadManager {
   ): THREE.AnimationClip | null {
     const clonedClip = clip.clone()
 
+    // DEBUG: Log all track names from the source animation
+    console.log(`[RetargetDebug] Source clip "${clip.name}" has ${clip.tracks.length} tracks:`)
+    clip.tracks.slice(0, 10).forEach((track: THREE.KeyframeTrack) => {
+      console.log(`  - ${track.name}`)
+    })
+    if (clip.tracks.length > 10) {
+      console.log(`  ... and ${clip.tracks.length - 10} more`)
+    }
+
+    // DEBUG: Log all bones in the animation GLB
+    const gltfBones: string[] = []
+    gltf.scene.traverse((obj: THREE.Object3D) => {
+      if (obj.type === 'Bone') gltfBones.push(obj.name)
+    })
+    console.log(`[RetargetDebug] Animation GLB bones:`, gltfBones.slice(0, 10))
+
+    // DEBUG: Log VRM normalized bone names
+    const vrmBones: string[] = []
+    Object.keys(boneNameToVRMBone).forEach((blenderName) => {
+      const vrmBoneName = boneNameToVRMBone[blenderName]
+      const normalizedNode = vrm.humanoid?.getNormalizedBoneNode(vrmBoneName)
+      if (normalizedNode) {
+        vrmBones.push(`${blenderName} -> ${vrmBoneName} -> ${normalizedNode.name}`)
+      }
+    })
+    console.log(`[RetargetDebug] VRM bone mapping (first 10):`, vrmBones.slice(0, 10))
+
     // Filter tracks - keep only quaternions and root position
+    // Position tracks can cause issues with retargeting, so we skip most of them
     clonedClip.tracks = clonedClip.tracks.filter((track: THREE.KeyframeTrack) => {
       if (track instanceof THREE.VectorKeyframeTrack) {
         const [name, type] = track.name.split('.')
         if (type !== 'position') return false
-        if (name === 'DEF-hips' || name === 'root') return true
-        return false
+        // Only keep position tracks for hips/root (various naming conventions)
+        const isHips = name === 'DEF-hips' || name === 'root' || name === 'Root' ||
+                       name === 'mixamorigHips' || name === 'Hips' || name === 'hips'
+        return isHips
       }
       return true
     })
@@ -198,17 +347,24 @@ export class LoadManager {
 
     // Retarget tracks to VRM skeleton using normalized bone names
     const retargetedTracks: THREE.KeyframeTrack[] = []
+    const unmappedBones: string[] = []
 
     clonedClip.tracks.forEach((track: THREE.KeyframeTrack) => {
       const trackSplitted = track.name.split('.')
       const blenderBoneName = trackSplitted[0]
-      const vrmBoneName = blenderVRMRigMap[blenderBoneName]
+      const vrmBoneName = boneNameToVRMBone[blenderBoneName]
 
-      if (!vrmBoneName) return
+      if (!vrmBoneName) {
+        unmappedBones.push(blenderBoneName)
+        return
+      }
 
       // Get the normalized bone node from the VRM humanoid
       const normalizedNode = vrm.humanoid?.getNormalizedBoneNode(vrmBoneName)
-      if (!normalizedNode) return
+      if (!normalizedNode) {
+        console.warn(`[RetargetDebug] VRM bone "${vrmBoneName}" has no normalized node`)
+        return
+      }
 
       const vrmNodeName = normalizedNode.name
       const propertyName = trackSplitted[1]
@@ -225,11 +381,18 @@ export class LoadManager {
       // Skip position tracks to prevent root motion issues
     })
 
+    if (unmappedBones.length > 0) {
+      const unique = [...new Set(unmappedBones)]
+      console.warn(`[RetargetDebug] Unmapped bones from source:`, unique)
+    }
+
     if (retargetedTracks.length > 0) {
-      console.log(`Retargeted ${clip.name}: ${retargetedTracks.length} tracks`)
+      console.log(`[RetargetDebug] Retargeted ${clip.name}: ${retargetedTracks.length} tracks`)
+      console.log(`[RetargetDebug] Sample track targets:`, retargetedTracks.slice(0, 5).map(t => t.name))
       return new THREE.AnimationClip(clip.name, clonedClip.duration, retargetedTracks)
     }
 
+    console.error(`[RetargetDebug] No tracks could be retargeted for ${clip.name}!`)
     return null
   }
 
@@ -241,6 +404,35 @@ export class LoadManager {
       console.error('Failed to load base animations GLB')
       return animations
     }
+
+    // Check if this is a VRMA file (has vrmAnimations in userData)
+    // VRMA files can be loaded directly without retargeting using createVRMAnimationClip
+    if (gltf.userData?.vrmAnimations && gltf.userData.vrmAnimations.length > 0) {
+      console.log(`[VRMAnimation] Found ${gltf.userData.vrmAnimations.length} VRM animations in VRMA format`)
+      for (const vrmAnimation of gltf.userData.vrmAnimations) {
+        try {
+          const clip = createVRMAnimationClip(vrmAnimation, vrm)
+          // Try to map the clip name to a game state
+          for (const [gameState, animName] of Object.entries(ANIMATION_STATE_MAP)) {
+            if (vrmAnimation.name === animName || clip.name === animName) {
+              clip.name = gameState
+              break
+            }
+          }
+          animations.push(clip)
+          console.log(`[VRMAnimation] Created clip: ${clip.name}`)
+        } catch (e) {
+          console.error(`[VRMAnimation] Failed to create clip from VRMA:`, e)
+        }
+      }
+      if (animations.length > 0) {
+        console.log(`Loaded ${animations.length} VRMA animations for VRM`)
+        return animations
+      }
+    }
+
+    // Fallback: Retarget standard GLB animations to VRM
+    console.log(`[VRMAnimation] No VRMA data found, using retargeting from standard GLB`)
 
     // Map game states to animation clips from the GLB
     for (const [gameState, animName] of Object.entries(ANIMATION_STATE_MAP)) {
