@@ -20,6 +20,11 @@ export class AnimationSystem {
           // Find the animation that corresponds to the current state
           const requestAnimationName = stateComponent.state
 
+          // Debug: Log what's happening (only once per state change)
+          if (stateComponent.updated) {
+            console.log(`AnimationSystem: Entity ${entity.id} state changed to "${requestAnimationName}", has ${animations.length} animations`)
+          }
+
           // Debug: Log available animations
           if (animations.length === 0) {
             console.warn(`No animations for entity ${entity.id}`)

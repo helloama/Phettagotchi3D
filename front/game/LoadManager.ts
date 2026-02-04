@@ -140,6 +140,8 @@ export class LoadManager {
     const parentRestWorldRotation = new THREE.Quaternion()
     const hipsNode = vrm.humanoid?.getNormalizedBoneNode('hips')
 
+    console.log(`Retargeting clip "${clip.name}" with ${clip.tracks.length} tracks`)
+
     if (hipsNode) {
       hipsNode.getWorldQuaternion(restRotationInverse).invert()
       if (hipsNode.parent) {
@@ -160,7 +162,10 @@ export class LoadManager {
 
       // Get the VRM bone node
       const vrmBoneNode = vrm.humanoid?.getNormalizedBoneNode(vrmBoneName)
-      if (!vrmBoneNode) continue
+      if (!vrmBoneNode) {
+        console.warn(`VRM bone not found for: ${vrmBoneName}`)
+        continue
+      }
 
       const vrmNodeName = vrmBoneNode.name
 
@@ -208,6 +213,10 @@ export class LoadManager {
       // Skip scale tracks as VRM handles scaling differently
     }
 
+    console.log(`Retargeted clip "${clip.name}" has ${tracks.length} tracks`)
+    if (tracks.length > 0) {
+      console.log(`First track targets: ${tracks[0].name}`)
+    }
     return new THREE.AnimationClip(clip.name, clip.duration, tracks)
   }
 
