@@ -48,8 +48,11 @@ export class ServerMeshSystem {
     entity.addComponent(meshComponent)
 
     if (mesh.animations && mesh.animations.length > 0) {
+      // For VRM models, the mixer needs to target the VRM scene (first child), not the wrapper mesh
+      // This is because the animation tracks target bones inside the VRM scene
+      const animationRoot = mesh.children.length > 0 ? mesh.children[0] : mesh
       entity.addComponent(
-        new AnimationComponent(entity.id, meshComponent.mesh, meshComponent.mesh.animations)
+        new AnimationComponent(entity.id, animationRoot as THREE.Mesh, meshComponent.mesh.animations)
       )
     }
   }
