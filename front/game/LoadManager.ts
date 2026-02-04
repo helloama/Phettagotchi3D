@@ -248,133 +248,104 @@ export class LoadManager {
   }
 
   /**
-   * Retarget a Blender animation clip to VRM using the hyperfy-style bone mapping
-   * Key insight: We must get the normalized bone node name and use that for tracks
+   * Retarget animation clip to VRM using the pixiv/three-vrm approach
+   * Based on: https://github.com/pixiv/three-vrm/blob/dev/packages/three-vrm-core/examples/loadMixamoAnimation.js
    */
   private retargetBlenderClipToVRM(
     clip: THREE.AnimationClip,
     gltf: any,
     vrm: VRM
   ): THREE.AnimationClip | null {
-    const clonedClip = clip.clone()
-
-    // DEBUG: Log all track names from the source animation
-    console.log(`[RetargetDebug] Source clip "${clip.name}" has ${clip.tracks.length} tracks:`)
-    clip.tracks.slice(0, 10).forEach((track: THREE.KeyframeTrack) => {
-      console.log(`  - ${track.name}`)
-    })
-    if (clip.tracks.length > 10) {
-      console.log(`  ... and ${clip.tracks.length - 10} more`)
-    }
-
-    // DEBUG: Log all bones in the animation GLB
-    const gltfBones: string[] = []
-    gltf.scene.traverse((obj: THREE.Object3D) => {
-      if (obj.type === 'Bone') gltfBones.push(obj.name)
-    })
-    console.log(`[RetargetDebug] Animation GLB bones:`, gltfBones.slice(0, 10))
-
-    // DEBUG: Log VRM normalized bone names
-    const vrmBones: string[] = []
-    Object.keys(boneNameToVRMBone).forEach((blenderName) => {
-      const vrmBoneName = boneNameToVRMBone[blenderName]
-      const normalizedNode = vrm.humanoid?.getNormalizedBoneNode(vrmBoneName)
-      if (normalizedNode) {
-        vrmBones.push(`${blenderName} -> ${vrmBoneName} -> ${normalizedNode.name}`)
-      }
-    })
-    console.log(`[RetargetDebug] VRM bone mapping (first 10):`, vrmBones.slice(0, 10))
-
-    // Filter tracks - keep only quaternions and root position
-    // Position tracks can cause issues with retargeting, so we skip most of them
-    clonedClip.tracks = clonedClip.tracks.filter((track: THREE.KeyframeTrack) => {
-      if (track instanceof THREE.VectorKeyframeTrack) {
-        const [name, type] = track.name.split('.')
-        if (type !== 'position') return false
-        // Only keep position tracks for hips/root (various naming conventions)
-        const isHips = name === 'DEF-hips' || name === 'root' || name === 'Root' ||
-                       name === 'mixamorigHips' || name === 'Hips' || name === 'hips'
-        return isHips
-      }
-      return true
-    })
-
-    // Get rest rotations for retargeting
-    clonedClip.tracks.forEach((track: THREE.KeyframeTrack) => {
-      const trackSplitted = track.name.split('.')
-      const blenderBoneName = trackSplitted[0]
-      const blenderBoneNode = gltf.scene.getObjectByName(blenderBoneName)
-
-      if (!blenderBoneNode || !blenderBoneNode.parent) {
-        return
-      }
-
-      blenderBoneNode.getWorldQuaternion(restRotationInverse).invert()
-      blenderBoneNode.parent.getWorldQuaternion(parentRestWorldRotation)
-
-      if (track instanceof THREE.QuaternionKeyframeTrack) {
-        for (let i = 0; i < track.values.length; i += 4) {
-          const flatQuaternion = track.values.slice(i, i + 4)
-          q1.fromArray(flatQuaternion)
-          q1.premultiply(parentRestWorldRotation).multiply(restRotationInverse)
-          q1.toArray(flatQuaternion)
-          flatQuaternion.forEach((v, index) => {
-            track.values[index + i] = v
-          })
-        }
-      }
-    })
-
-    clonedClip.optimize()
-
-    // Retarget tracks to VRM skeleton using normalized bone names
     const retargetedTracks: THREE.KeyframeTrack[] = []
-    const unmappedBones: string[] = []
 
-    clonedClip.tracks.forEach((track: THREE.KeyframeTrack) => {
+    // Process each track
+    for (const track of clip.tracks) {
       const trackSplitted = track.name.split('.')
-      const blenderBoneName = trackSplitted[0]
-      const vrmBoneName = boneNameToVRMBone[blenderBoneName]
-
-      if (!vrmBoneName) {
-        unmappedBones.push(blenderBoneName)
-        return
-      }
-
-      // Get the normalized bone node from the VRM humanoid
-      const normalizedNode = vrm.humanoid?.getNormalizedBoneNode(vrmBoneName)
-      if (!normalizedNode) {
-        console.warn(`[RetargetDebug] VRM bone "${vrmBoneName}" has no normalized node`)
-        return
-      }
-
-      const vrmNodeName = normalizedNode.name
+      const sourceBoneName = trackSplitted[0]
       const propertyName = trackSplitted[1]
 
-      if (track instanceof THREE.QuaternionKeyframeTrack) {
-        retargetedTracks.push(
-          new THREE.QuaternionKeyframeTrack(
-            `${vrmNodeName}.${propertyName}`,
-            track.times,
-            track.values
-          )
-        )
-      }
-      // Skip position tracks to prevent root motion issues
-    })
+      // Skip non-quaternion tracks (except hips position)
+      if (propertyName === 'position') {
+        const isHips = sourceBoneName.toLowerCase().includes('hip') ||
+                       sourceBoneName.toLowerCase() === 'root'
+        if (!isHips) continue
 
-    if (unmappedBones.length > 0) {
-      const unique = [...new Set(unmappedBones)]
-      console.warn(`[RetargetDebug] Unmapped bones from source:`, unique)
+        // For hips position, scale and rename
+        const vrmBoneName = boneNameToVRMBone[sourceBoneName]
+        if (vrmBoneName) {
+          const normalizedNode = vrm.humanoid?.getNormalizedBoneNode(vrmBoneName)
+          if (normalizedNode) {
+            // Scale position values (Mixamo uses different scale)
+            const scaledValues = new Float32Array(track.values.length)
+            for (let i = 0; i < track.values.length; i++) {
+              scaledValues[i] = track.values[i] * 0.01 // Mixamo to VRM scale
+            }
+            retargetedTracks.push(
+              new THREE.VectorKeyframeTrack(
+                `${normalizedNode.name}.position`,
+                track.times,
+                scaledValues
+              )
+            )
+          }
+        }
+        continue
+      }
+
+      if (propertyName !== 'quaternion') continue
+
+      // Map source bone to VRM bone
+      const vrmBoneName = boneNameToVRMBone[sourceBoneName]
+      if (!vrmBoneName) continue
+
+      const normalizedNode = vrm.humanoid?.getNormalizedBoneNode(vrmBoneName)
+      if (!normalizedNode) continue
+
+      // Get source bone from animation GLB
+      const sourceBone = gltf.scene.getObjectByName(sourceBoneName)
+      if (!sourceBone) continue
+
+      // Get rest pose rotations
+      const sourceRestQuat = new THREE.Quaternion()
+      const sourceParentRestQuat = new THREE.Quaternion()
+
+      sourceBone.getWorldQuaternion(sourceRestQuat)
+      if (sourceBone.parent) {
+        sourceBone.parent.getWorldQuaternion(sourceParentRestQuat)
+      }
+
+      // Process each keyframe
+      const newValues = new Float32Array(track.values.length)
+      const tempQuat = new THREE.Quaternion()
+      const sourceRestQuatInv = sourceRestQuat.clone().invert()
+
+      for (let i = 0; i < track.values.length; i += 4) {
+        // Get the animated rotation
+        tempQuat.fromArray(track.values, i)
+
+        // Remove source skeleton's rest pose: result = parentWorld * animated * restInverse
+        // This gives us the "delta" rotation from rest pose
+        tempQuat.premultiply(sourceParentRestQuat).multiply(sourceRestQuatInv)
+
+        tempQuat.toArray(newValues, i)
+      }
+
+      retargetedTracks.push(
+        new THREE.QuaternionKeyframeTrack(
+          `${normalizedNode.name}.quaternion`,
+          track.times,
+          newValues
+        )
+      )
     }
 
     if (retargetedTracks.length > 0) {
-      console.log(`[RetargetDebug] Retargeted ${clip.name}: ${retargetedTracks.length} tracks`)
-      console.log(`[RetargetDebug] Sample track targets:`, retargetedTracks.slice(0, 5).map(t => t.name))
-      return new THREE.AnimationClip(clip.name, clonedClip.duration, retargetedTracks)
+      const retargetedClip = new THREE.AnimationClip(clip.name, clip.duration, retargetedTracks)
+      console.log(`[Retarget] ${clip.name}: ${retargetedTracks.length} tracks`)
+      return retargetedClip
     }
 
-    console.error(`[RetargetDebug] No tracks could be retargeted for ${clip.name}!`)
+    console.error(`[Retarget] No tracks retargeted for ${clip.name}`)
     return null
   }
 
