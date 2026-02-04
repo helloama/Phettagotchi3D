@@ -52,5 +52,8 @@ fastlane/report.xml
 fastlane/Preview.html
 fastlane/screenshots
 
-*.glb
 *.blend
+
+# Ignore GLB files except in public assets (needed for animations)
+*.glb
+!public/assets/**/*.glb
