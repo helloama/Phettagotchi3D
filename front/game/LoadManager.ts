@@ -17,16 +17,13 @@ export interface LoadResult {
   animations: THREE.AnimationClip[]
 }
 
-// Combined animation file from hyperfy (contains all animations)
-const HUMAN_BASE_ANIMATIONS_PATH = '/assets/animations/human-base-animations.glb'
-
-// Map game states to animation names in the GLB file
-const ANIMATION_STATE_MAP: Record<string, string> = {
-  Idle: 'Idle_Loop',
-  Walk: 'Walk_Loop',
-  Run: 'Sprint_Loop',
-  Jump: 'Jump_Loop',
-  Fall: 'Jump_Loop',
+// Individual animation files - these are the working animations
+const ANIMATION_FILES: Record<string, string> = {
+  Idle: '/assets/animations/idle.glb',
+  Walk: '/assets/animations/walk.glb',
+  Run: '/assets/animations/run.glb',
+  Jump: '/assets/animations/jump.glb',
+  Fall: '/assets/animations/fall.glb',
 }
 
 // Comprehensive bone mapping supporting Blender DEF-*, Mixamo, and VRM standard names
@@ -220,43 +217,30 @@ export class LoadManager {
     return LoadManager.instance
   }
 
-  private baseAnimationsGLTF: any = null
+  // Cache for loaded animation GLTFs
+  private animationGLTFCache = new Map<string, any>()
 
-  private async loadBaseAnimationsGLTF(): Promise<any | null> {
-    if (this.baseAnimationsGLTF) {
-      return this.baseAnimationsGLTF
+  private async loadAnimationGLTF(path: string): Promise<any | null> {
+    if (this.animationGLTFCache.has(path)) {
+      return this.animationGLTFCache.get(path)
     }
 
     return new Promise((resolve) => {
       this.animLoader.load(
-        HUMAN_BASE_ANIMATIONS_PATH,
+        path,
         (gltf) => {
           if (gltf.animations && gltf.animations.length > 0) {
-            this.baseAnimationsGLTF = gltf
-            console.log(`Loaded base animations GLB with ${gltf.animations.length} animations`)
-            gltf.animations.forEach((clip: THREE.AnimationClip) => {
-              console.log(`  - ${clip.name} (${clip.duration.toFixed(2)}s, ${clip.tracks.length} tracks)`)
-            })
-            // Log VRMA data if present
-            if (gltf.userData?.vrmAnimations) {
-              console.log(`[VRMAnimation] VRMA data present: ${gltf.userData.vrmAnimations.length} animations`)
-            }
-            // Log first animation track names for debugging
-            if (gltf.animations[0]?.tracks?.length > 0) {
-              console.log(`[Debug] First animation track names (first 5):`)
-              gltf.animations[0].tracks.slice(0, 5).forEach((t: THREE.KeyframeTrack) => {
-                console.log(`    ${t.name}`)
-              })
-            }
+            this.animationGLTFCache.set(path, gltf)
+            console.log(`Loaded animation: ${path} (${gltf.animations[0].tracks.length} tracks)`)
             resolve(gltf)
           } else {
-            console.warn('No animations found in human-base-animations.glb')
+            console.warn(`No animations found in ${path}`)
             resolve(null)
           }
         },
         undefined,
         (error) => {
-          console.error('Failed to load base animations:', error)
+          console.error(`Failed to load animation ${path}:`, error)
           resolve(null)
         }
       )
@@ -396,59 +380,38 @@ export class LoadManager {
 
   private async loadVRMAnimations(vrm: VRM): Promise<THREE.AnimationClip[]> {
     const animations: THREE.AnimationClip[] = []
-    const gltf = await this.loadBaseAnimationsGLTF()
 
-    if (!gltf) {
-      console.error('Failed to load base animations GLB')
-      return animations
-    }
-
-    // Check if this is a VRMA file (has vrmAnimations in userData)
-    // VRMA files can be loaded directly without retargeting using createVRMAnimationClip
-    if (gltf.userData?.vrmAnimations && gltf.userData.vrmAnimations.length > 0) {
-      console.log(`[VRMAnimation] Found ${gltf.userData.vrmAnimations.length} VRM animations in VRMA format`)
-      for (const vrmAnimation of gltf.userData.vrmAnimations) {
-        try {
-          const clip = createVRMAnimationClip(vrmAnimation, vrm)
-          // Try to map the clip name to a game state
-          for (const [gameState, animName] of Object.entries(ANIMATION_STATE_MAP)) {
-            if (vrmAnimation.name === animName || clip.name === animName) {
-              clip.name = gameState
-              break
-            }
-          }
-          animations.push(clip)
-          console.log(`[VRMAnimation] Created clip: ${clip.name}`)
-        } catch (e) {
-          console.error(`[VRMAnimation] Failed to create clip from VRMA:`, e)
-        }
-      }
-      if (animations.length > 0) {
-        console.log(`Loaded ${animations.length} VRMA animations for VRM`)
-        return animations
-      }
-    }
-
-    // Fallback: Retarget standard GLB animations to VRM
-    console.log(`[VRMAnimation] No VRMA data found, using retargeting from standard GLB`)
-
-    // Map game states to animation clips from the GLB
-    for (const [gameState, animName] of Object.entries(ANIMATION_STATE_MAP)) {
-      const sourceClip = gltf.animations.find((clip: THREE.AnimationClip) => clip.name === animName)
-      if (!sourceClip) {
-        console.warn(`Animation ${animName} not found in base animations GLB`)
+    // Load each individual animation file
+    for (const [gameState, animPath] of Object.entries(ANIMATION_FILES)) {
+      const gltf = await this.loadAnimationGLTF(animPath)
+      if (!gltf) {
+        console.warn(`Could not load animation: ${animPath}`)
         continue
       }
 
-      const retargetedClip = this.retargetBlenderClipToVRM(sourceClip, gltf, vrm)
-      if (retargetedClip) {
-        retargetedClip.name = gameState
-        animations.push(retargetedClip)
-        console.log(`Retargeted ${animName} -> ${gameState}`)
+      // Check if this is a VRMA file
+      if (gltf.userData?.vrmAnimations && gltf.userData.vrmAnimations.length > 0) {
+        try {
+          const clip = createVRMAnimationClip(gltf.userData.vrmAnimations[0], vrm)
+          clip.name = gameState
+          animations.push(clip)
+          console.log(`Loaded VRMA animation: ${gameState}`)
+        } catch (e) {
+          console.error(`Failed to create VRMA clip for ${gameState}:`, e)
+        }
+      } else if (gltf.animations && gltf.animations.length > 0) {
+        // Standard GLB - retarget to VRM
+        const sourceClip = gltf.animations[0]
+        const retargetedClip = this.retargetBlenderClipToVRM(sourceClip, gltf, vrm)
+        if (retargetedClip) {
+          retargetedClip.name = gameState
+          animations.push(retargetedClip)
+          console.log(`Retargeted animation: ${gameState}`)
+        }
       }
     }
 
-    console.log(`Loaded ${animations.length} retargeted animations for VRM`)
+    console.log(`Loaded ${animations.length} animations for VRM: ${animations.map(a => a.name).join(', ')}`)
     return animations
   }
 
