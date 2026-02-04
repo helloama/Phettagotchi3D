@@ -190,8 +190,6 @@ const boneNameToVRMBone: Record<string, VRMHumanBoneName> = {
   'DEF-toe.R': 'rightToes',
 }
 
-// Keep alias for backwards compatibility
-const boneNameToVRMBone = boneNameToVRMBone
 
 // Reusable quaternion objects for retargeting
 const q1 = new THREE.Quaternion()
