@@ -37,86 +37,150 @@ export default function GameContent({ gameInfo }: { gameInfo: GameInfo }) {
         <div className="px-4 container mx-auto">
           <Navbar />
           <div className="flex flex-col lg:flex-row gap-8 mb-12">
-            {/* Image Section - Larger and Clickable */}
+            {/* Image Section - Phettagotchi Panel Style */}
             <div className="lg:w-2/3 cursor-pointer" onClick={handlePlayClick}>
-              <div className="relative group rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-shadow duration-300  ">
-                <img
-                  src={gameInfo.imageUrl}
-                  alt={`${gameInfo.title} cover`}
-                  className="w-full h-64 md:h-[400px] object-cover transform transition-transform duration-300 group-hover:scale-105"
-                />
-
-                {/* Online Badge */}
-                <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm rounded-xl px-3 py-1.5 flex items-center space-x-2 shadow-sm">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div> {/* Green dot */}
-                  <span className="text-sm font-medium text-gray-800">Online</span>
+              <div className="phetta-panel overflow-hidden group">
+                {/* Window Title Bar */}
+                <div className="phetta-titlebar">
+                  <span className="flex items-center gap-2">
+                    <span className="text-pink-400">🎮</span>
+                    <span>game_viewer.exe</span>
+                  </span>
+                  <div className="phetta-titlebar-dots">
+                    <div className="phetta-titlebar-dot" />
+                    <div className="phetta-titlebar-dot" />
+                    <div className="phetta-titlebar-dot" />
+                  </div>
                 </div>
-                {/* Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent" />
-                {/* Play Icon Overlay */}
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <div className="bg-black/10 rounded-full p-4 backdrop-blur-sm">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-12 w-12 text-white"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
-                      />
-                    </svg>
+
+                <div className="relative">
+                  <img
+                    src={gameInfo.imageUrl}
+                    alt={`${gameInfo.title} cover`}
+                    className="w-full h-64 md:h-[400px] object-cover transform transition-transform duration-300 group-hover:scale-105"
+                  />
+
+                  {/* Online Badge */}
+                  <div className="absolute top-4 left-4 phetta-badge-online">
+                    Online
+                  </div>
+
+                  {/* Gradient Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a1a] via-transparent to-transparent" />
+
+                  {/* Play Icon Overlay */}
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/30">
+                    <div className="bg-purple-600/80 rounded-full p-6 backdrop-blur-sm border-2 border-purple-400/50 shadow-[0_0_40px_rgba(139,92,246,0.6)]">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-14 w-14 text-white"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Content Section - Smaller */}
-            <div className="lg:w-1/3 flex flex-col justify-center space-y-6">
-              <h1 className="text-4xl lg:text-5xl font-bold text-gray-900">{gameInfo.title}</h1>
-              <p className="text-gray-600 text-lg leading-relaxed">{gameInfo.metaDescription}</p>
-              <div className="flex flex-col space-y-4">
-                {/* Player Name Input */}
-                <div className="flex flex-col space-y-2">
-                  <label htmlFor="playerName" className="text-sm font-medium text-gray-700">
-                    Your Player Name
-                  </label>
-                  <input
-                    type="text"
-                    id="playerName"
-                    value={playerName}
-                    onChange={(e) => setPlayerName(e.target.value)}
-                    placeholder="Enter your name"
-                    maxLength={20}
-                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                  />
+            {/* Content Section - Phettagotchi Panel Style */}
+            <div className="lg:w-1/3 flex flex-col justify-center">
+              <div className="phetta-panel p-0">
+                {/* Window Title Bar */}
+                <div className="phetta-titlebar">
+                  <span className="flex items-center gap-2">
+                    <span className="text-cyan-400">⚙️</span>
+                    <span>quick_play.exe</span>
+                  </span>
+                  <div className="phetta-titlebar-dots">
+                    <div className="phetta-titlebar-dot" />
+                    <div className="phetta-titlebar-dot" />
+                    <div className="phetta-titlebar-dot" />
+                  </div>
                 </div>
-                <button
-                  onClick={handlePlayClick}
-                  className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-xl font-bold text-lg transition-all duration-300 transform hover:scale-105 inline-block text-center shadow-lg hover:shadow-xl"
-                >
-                  Play Now →
-                </button>
+
+                <div className="p-6 space-y-6">
+                  <h1 className="text-3xl lg:text-4xl font-bold text-white font-['Orbitron'] tracking-wide">
+                    {gameInfo.title}
+                  </h1>
+                  <p className="text-slate-400 text-lg leading-relaxed font-['VT323'] text-xl">
+                    {gameInfo.metaDescription}
+                  </p>
+
+                  {/* Player Name Input */}
+                  <div className="flex flex-col space-y-2">
+                    <label htmlFor="playerName" className="text-sm font-medium text-purple-300 font-['VT323'] text-lg tracking-wide">
+                      👤 Your Player Name
+                    </label>
+                    <input
+                      type="text"
+                      id="playerName"
+                      value={playerName}
+                      onChange={(e) => setPlayerName(e.target.value)}
+                      placeholder="Enter your name..."
+                      maxLength={20}
+                      className="phetta-input"
+                    />
+                  </div>
+
+                  {/* Play Button */}
+                  <button
+                    onClick={handlePlayClick}
+                    className="phetta-btn w-full text-lg py-4"
+                  >
+                    ▶ Play Now
+                  </button>
+                </div>
               </div>
             </div>
           </div>
+
           {/* Related Games */}
           <section className="w-full">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 px-4 sm:px-0">More Games</h2>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {gameData.map((game) => (
-                <MiniGameCard {...game} key={game.slug} />
-              ))}
+            <div className="phetta-panel mb-8">
+              <div className="phetta-titlebar">
+                <span className="flex items-center gap-2">
+                  <span className="text-orange-400">📁</span>
+                  <span>more_games.exe</span>
+                </span>
+                <div className="phetta-titlebar-dots">
+                  <div className="phetta-titlebar-dot" />
+                  <div className="phetta-titlebar-dot" />
+                  <div className="phetta-titlebar-dot" />
+                </div>
+              </div>
+              <div className="p-6">
+                <h2 className="text-2xl font-bold text-white mb-6 font-['Orbitron']">More Games</h2>
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                  {gameData.map((game) => (
+                    <MiniGameCard {...game} key={game.slug} />
+                  ))}
+                </div>
+              </div>
             </div>
           </section>
+
           {/* Markdown Content */}
-          <section className="w-full mt-12 bg-white p-4 md:p-8 rounded-2xl drop-shadow-sm border border-gray-200">
-            <div className="prose max-w-none">
-              <ReactMarkdown>{gameInfo.markdown}</ReactMarkdown>
+          <section className="w-full mt-8 mb-12">
+            <div className="phetta-panel">
+              <div className="phetta-titlebar">
+                <span className="flex items-center gap-2">
+                  <span className="text-green-400">📄</span>
+                  <span>readme.txt</span>
+                </span>
+                <div className="phetta-titlebar-dots">
+                  <div className="phetta-titlebar-dot" />
+                  <div className="phetta-titlebar-dot" />
+                  <div className="phetta-titlebar-dot" />
+                </div>
+              </div>
+              <div className="p-6">
+                <div className="prose prose-invert max-w-none prose-headings:font-['Orbitron'] prose-headings:text-purple-300 prose-p:text-slate-300 prose-p:font-['VT323'] prose-p:text-lg prose-a:text-cyan-400 prose-strong:text-white">
+                  <ReactMarkdown>{gameInfo.markdown}</ReactMarkdown>
+                </div>
+              </div>
             </div>
           </section>
         </div>

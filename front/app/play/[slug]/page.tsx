@@ -28,13 +28,13 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const gameInfo = getGamesBySlug(slug)
 
   return {
-    title: `Play ${gameInfo.title} - NotBlox`,
+    title: `Play ${gameInfo.title} - Phettagotchi 3D`,
     description: gameInfo.metaDescription,
     openGraph: {
-      title: `Play ${gameInfo.title} - NotBlox`,
+      title: `Play ${gameInfo.title} - Phettagotchi 3D`,
       description: gameInfo.metaDescription,
       images: gameInfo.images ?? [],
-      siteName: 'NotBlox Online',
+      siteName: 'Phettagotchi 3D',
     },
     twitter: {
       card: 'summary_large_image',
@@ -42,7 +42,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
       creator: '@iercan_',
     },
     alternates: {
-      canonical: `https://www.notblox.online/play/${gameInfo.slug}`,
+      canonical: `https://www.phettagotchi.com/play/${gameInfo.slug}`,
     },
   }
 }

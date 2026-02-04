@@ -59,9 +59,11 @@ export class Player {
     const stateComponent = new StateComponent(this.entity.id, SerializedStateType.IDLE)
     this.entity.addComponent(stateComponent)
 
+    // Use custom VRM avatar - served from frontend public/assets/avatars/
+    const avatarUrl = process.env.PLAYER_AVATAR_URL || '/assets/avatars/phettav5.vrm'
     const serverMeshComponent = new ServerMeshComponent(
       this.entity.id,
-      'https://notbloxo.fra1.cdn.digitaloceanspaces.com/Notblox-Assets/character/Character.glb'
+      avatarUrl
     )
     this.entity.addComponent(serverMeshComponent)
 

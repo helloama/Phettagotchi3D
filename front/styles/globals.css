@@ -1,93 +1,93 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
- 
+
+/* Import pixel font for retro aesthetic */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Orbitron:wght@400;500;600;700;800;900&display=swap');
+
 /* Firefox */
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--secondary) var(--primary);
+  scrollbar-color: #6366f1 #0a0a1a;
 }
 
- 
- 
+/* Webkit scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0a1a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #6366f1 0%, #8b5cf6 100%);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #818cf8 0%, #a78bfa 100%);
+}
+
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
+    /* Phettagotchi Dark Theme - Deep Space Blue/Purple */
+    --background: 240 40% 3%;
+    --foreground: 210 40% 98%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
- 
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
- 
-    --primary: 0 0% 9%;
-    --primary-foreground: 0 0% 98%;
- 
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
- 
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
- 
-    --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
- 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
+    --card: 240 40% 8%;
+    --card-foreground: 210 40% 98%;
 
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 0 0% 3.9%;
- 
+    --popover: 240 40% 6%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 265 89% 78%;
+    --primary-foreground: 240 40% 3%;
+
+    --secondary: 240 30% 15%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 240 30% 12%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 265 89% 70%;
+    --accent-foreground: 240 40% 3%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 240 30% 20%;
+    --input: 240 30% 15%;
+    --ring: 265 89% 78%;
+
     --radius: 0.5rem;
- 
-    --chart-1: 12 76% 61%;
- 
-    --chart-2: 173 58% 39%;
- 
-    --chart-3: 197 37% 24%;
- 
-    --chart-4: 43 74% 66%;
- 
-    --chart-5: 27 87% 67%;
-  }
-  .dark {
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 0 0% 83.1%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
+
+    /* Phettagotchi specific colors */
+    --phetta-bg: #050510;
+    --phetta-panel: rgba(15, 20, 40, 0.95);
+    --phetta-border: #2a2a5a;
+    --phetta-border-light: #4a4a8a;
+    --phetta-accent: #8b5cf6;
+    --phetta-accent-pink: #ec4899;
+    --phetta-accent-cyan: #22d3ee;
+    --phetta-green: #22c55e;
+    --phetta-orange: #f97316;
+    --phetta-text: #e2e8f0;
+    --phetta-text-dim: #94a3b8;
+    --phetta-glow: 0 0 20px rgba(139, 92, 246, 0.5);
+
+    --chart-1: 265 89% 70%;
+    --chart-2: 280 65% 60%;
+    --chart-3: 200 80% 55%;
+    --chart-4: 150 60% 50%;
     --chart-5: 340 75% 55%;
   }
-  
-
- 
 }
- 
 
 * {
-  scrollbar-color:  rgba(250, 250, 255, 0.1)  rgba(0, 0, 0, 0.2); /* Thumb color followed by track color */
+  scrollbar-color: #6366f1 #0a0a1a;
 }
- 
 
 @layer base {
   * {
@@ -95,7 +95,196 @@
   }
   body {
     @apply bg-background text-foreground;
+    background: var(--phetta-bg);
+    font-family: 'Orbitron', 'VT323', monospace;
   }
+}
+
+/* Phettagotchi Window Panel Component */
+.phetta-panel {
+  background: linear-gradient(180deg, rgba(20, 25, 50, 0.98) 0%, rgba(10, 15, 35, 0.98) 100%);
+  border: 2px solid var(--phetta-border);
+  border-radius: 8px;
+  box-shadow:
+    0 0 0 1px rgba(138, 92, 246, 0.1),
+    0 4px 20px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.phetta-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.5), transparent);
+}
+
+/* Window Title Bar */
+.phetta-titlebar {
+  background: linear-gradient(90deg, rgba(139, 92, 246, 0.2) 0%, rgba(59, 130, 246, 0.1) 100%);
+  border-bottom: 1px solid var(--phetta-border);
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: 'VT323', monospace;
+  font-size: 1.1rem;
+  color: var(--phetta-accent);
+  letter-spacing: 1px;
+}
+
+.phetta-titlebar-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.phetta-titlebar-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--phetta-border);
+  border: 1px solid var(--phetta-border-light);
+}
+
+/* Glowing Button */
+.phetta-btn {
+  background: linear-gradient(180deg, #22c55e 0%, #16a34a 100%);
+  border: none;
+  border-radius: 6px;
+  padding: 12px 24px;
+  color: white;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow:
+    0 4px 15px rgba(34, 197, 94, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.phetta-btn:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 6px 25px rgba(34, 197, 94, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.phetta-btn-purple {
+  background: linear-gradient(180deg, #8b5cf6 0%, #7c3aed 100%);
+  box-shadow:
+    0 4px 15px rgba(139, 92, 246, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.phetta-btn-purple:hover {
+  box-shadow:
+    0 6px 25px rgba(139, 92, 246, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+/* Stats Display */
+.phetta-stat {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--phetta-border);
+  border-radius: 6px;
+  padding: 12px 16px;
+  text-align: center;
+}
+
+.phetta-stat-label {
+  font-family: 'VT323', monospace;
+  font-size: 0.9rem;
+  color: var(--phetta-text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.phetta-stat-value {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--phetta-accent);
+}
+
+/* Online Status Badge */
+.phetta-badge-online {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-family: 'VT323', monospace;
+  font-size: 1rem;
+  color: #22c55e;
+}
+
+.phetta-badge-online::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  background: #22c55e;
+  border-radius: 50%;
+  animation: pulse-glow 2s infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5); }
+  50% { box-shadow: 0 0 10px 3px rgba(34, 197, 94, 0.3); }
+}
+
+/* Pixel Stars Background */
+.phetta-stars {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background-image:
+    radial-gradient(2px 2px at 20px 30px, rgba(255,255,255,0.3), transparent),
+    radial-gradient(2px 2px at 40px 70px, rgba(255,255,255,0.2), transparent),
+    radial-gradient(1px 1px at 90px 40px, rgba(255,255,255,0.4), transparent),
+    radial-gradient(2px 2px at 130px 80px, rgba(255,255,255,0.2), transparent),
+    radial-gradient(1px 1px at 160px 120px, rgba(255,255,255,0.3), transparent);
+  background-size: 200px 200px;
+  animation: twinkle 4s ease-in-out infinite;
+  z-index: 0;
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+/* Input Styling */
+.phetta-input {
+  background: rgba(0, 0, 0, 0.4);
+  border: 2px solid var(--phetta-border);
+  border-radius: 6px;
+  padding: 12px 16px;
+  color: var(--phetta-text);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.phetta-input:focus {
+  outline: none;
+  border-color: var(--phetta-accent);
+  box-shadow: 0 0 15px rgba(139, 92, 246, 0.3);
+}
+
+.phetta-input::placeholder {
+  color: var(--phetta-text-dim);
 }
  
  

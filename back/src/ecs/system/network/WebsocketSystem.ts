@@ -41,7 +41,7 @@ import { WebSocketComponent } from '../../component/WebsocketComponent.js'
 type MessageHandler = (ws: any, message: any) => void
 
 export class WebsocketSystem {
-  private port: number = 8001
+  private port: number = parseInt(process.env.GAME_PORT || '8001', 10)
   private players: Player[] = []
   private messageHandlers: Map<ClientMessageType, MessageHandler> = new Map()
   private inputProcessingSystem: InputProcessingSystem = new InputProcessingSystem()
