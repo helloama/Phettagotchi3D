@@ -1,10 +1,11 @@
 # Claude Context - Notblox/Phettagotchi3D
 
-## Current Task: Fix VRM Animation
+## Project Overview
+Multiplayer 3D game with VRM avatar support. Built with Next.js frontend, Three.js rendering, and custom ECS architecture.
 
-The VRM character is stuck in T-pose. Animations exist and have worked before.
+## Animation System (WORKING)
 
-### Animation Files (ALREADY IN REPO - USE THESE)
+### Animation Files (USE THESE - THEY WORK)
 ```
 front/public/assets/animations/
   - idle.glb
@@ -15,40 +16,61 @@ front/public/assets/animations/
 ```
 
 ### Key Files
-- `front/game/LoadManager.ts` - Loads VRM models and retargets animations
-- `front/game/ecs/system/AnimationSystem.ts` - Plays animations, calls `vrm.humanoid.update()`
-- `front/game/ecs/system/ServerMeshSystem.ts` - Sets up AnimationComponent with vrm.scene as root
-- `front/game/ecs/component/AnimationComponent.ts` - Stores mixer, vrm, skeleton
+| File | Purpose |
+|------|---------|
+| `front/game/LoadManager.ts` | Loads VRM models, retargets animations to VRM skeleton |
+| `front/game/ecs/system/AnimationSystem.ts` | Plays animations, calls `vrm.humanoid.update()` |
+| `front/game/ecs/system/ServerMeshSystem.ts` | Sets up AnimationComponent with vrm.scene as root |
+| `front/game/ecs/component/AnimationComponent.ts` | Stores mixer, vrm, skeleton references |
 
-### VRM Animation Key Points
-1. VRM has "normalized bones" (proxy) and "raw bones" (actual)
-2. Animation tracks must target normalized bone node names
-3. After `mixer.update()`, must call `vrm.humanoid.update()` to propagate transforms
-4. AnimationMixer must target `vrm.scene` where normalized bones live
+### VRM Animation - Critical Knowledge
+
+1. **Normalized vs Raw Bones**: VRM has proxy "normalized" bones and actual "raw" bones
+2. **Animation Target**: AnimationMixer MUST target `vrm.scene` where normalized bones live
+3. **humanoid.update()**: MUST call `vrm.humanoid.update()` after `mixer.update()` to propagate transforms
+4. **Retargeting Math**: `parentRestWorld * trackRotation * restWorldInverse`
+
+### Working Retargeting Code (LoadManager.ts)
+```typescript
+// Get rest pose rotations from source animation
+mixamoRigNode.getWorldQuaternion(restRotationInverse).invert()
+mixamoRigNode.parent.getWorldQuaternion(parentRestWorldRotation)
+
+// Transform each keyframe
+_quatA.fromArray(track.values, i)
+_quatA.premultiply(parentRestWorldRotation).multiply(restRotationInverse)
+```
 
 ### Bone Mapping
-The animations use Mixamo naming (mixamorigHips, mixamorigSpine, etc.)
-LoadManager has comprehensive mapping from Mixamo -> VRM bone names
-
-### Current Status
-- Animations load from individual GLB files
-- Retargeting attempts to map Mixamo bones to VRM normalized bones
-- Character shows partial movement (head, legs) but not full animation
-
-### Debug Logs to Check
-- `[RetargetDebug]` - Shows source tracks and bone mapping
-- `[AnimDebug]` - Shows normalized bones in VRM scene
-- `AnimationSystem:` - Shows state changes and animation playback
+The animations use Mixamo naming convention. Full mapping in `boneNameToVRMBone`:
+- `mixamorigHips` → `hips`
+- `mixamorigSpine` → `spine`
+- etc.
 
 ## Project Structure
 ```
 Notblox/
-  front/          - Next.js frontend with Three.js
-  back/           - Game server
-  shared/         - Shared types/components
+  front/           - Next.js frontend with Three.js
+    game/          - Game client code
+      ecs/         - Entity Component System
+        component/ - Components (AnimationComponent, MeshComponent, etc.)
+        system/    - Systems (AnimationSystem, ServerMeshSystem, etc.)
+    public/assets/ - Static assets (animations, models)
+  back/            - Game server
+  shared/          - Shared types/components between front and back
 ```
+
+## Common Issues & Solutions
+
+| Issue | Solution |
+|-------|----------|
+| T-pose stuck | Check AnimationMixer targets vrm.scene, not mesh |
+| Arms pointing wrong | Quaternion math order: premultiply parent, multiply inverse |
+| Floating character | Scale hips position by `vrmHipsHeight / motionHipsHeight` |
+| 404 on assets | Check .gitignore allows files in public/assets |
 
 ## Don't Do
 - Don't reference non-existent animation files
-- Don't overcomplicate - the individual GLB files have worked before
-- Don't search online when the solution is in the existing codebase
+- Don't skip `vrm.humanoid.update()` after mixer update
+- Don't target mesh instead of vrm.scene for AnimationMixer
+- Don't forget VRM 0.x vs 1.x differences in quaternion handling
