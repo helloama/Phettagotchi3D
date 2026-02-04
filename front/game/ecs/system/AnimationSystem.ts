@@ -11,8 +11,7 @@ export class AnimationSystem {
       const stateComponent = entity.getComponent(StateComponent)
 
       if (animationComponent && stateComponent && meshComponent) {
-        const mesh = meshComponent.mesh
-        const animations = mesh.animations
+        const animations = animationComponent.animations
 
         const isNotPlaying = animationComponent.mixer.time === 0
 
@@ -40,9 +39,7 @@ export class AnimationSystem {
               // Fade in and play the animation corresponding to the current state
               foundAnimation = true
               action.reset()
-
               action.fadeIn(0.1)
-
               action.play()
             }
           }
@@ -52,7 +49,25 @@ export class AnimationSystem {
           }
         }
 
-        animationComponent.mixer.update(dt / 1000)
+        // Update the animation mixer
+        const deltaSeconds = dt / 1000
+        animationComponent.mixer.update(deltaSeconds)
+
+        // CRITICAL: Propagate normalized bone transforms to raw bones
+        // This is the key insight from hyperscape's VRM animation system
+        // Without this call, normalized bone changes never reach the visible skeleton
+        if (animationComponent.vrm?.humanoid) {
+          animationComponent.vrm.humanoid.update()
+        }
+
+        // Update skeleton matrices for skinning
+        if (animationComponent.skeleton) {
+          const bones = animationComponent.skeleton.bones
+          for (let i = 0; i < bones.length; i++) {
+            bones[i].updateMatrixWorld()
+          }
+          animationComponent.skeleton.update()
+        }
       }
     }
   }

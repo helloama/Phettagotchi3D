@@ -17,7 +17,7 @@ export class ServerMeshSystem {
 
       if (!entity) {
         console.error('ServerMeshSystem: Entity not found')
-        return Promise.resolve() // Return a resolved promise if the entity is not found
+        return Promise.resolve()
       }
       // Hack to load the world in parallel
       // Initial load is faster
@@ -37,26 +37,37 @@ export class ServerMeshSystem {
   ): Promise<void> {
     const serverMeshComponent = event.component
 
-    // Load the mesh from the serverMeshComponent
-    const mesh = await LoadManager.glTFLoad(serverMeshComponent.filePath)
-    const meshComponent = new MeshComponent(entity.id, mesh)
+    // Load the mesh with VRM support
+    const loadResult = await LoadManager.glTFLoadWithVRM(serverMeshComponent.filePath)
+    const meshComponent = new MeshComponent(entity.id, loadResult.mesh)
 
-    // // Debug : Add a box helper around the mesh (if player)
-    // const geometry = new THREE.CapsuleGeometry(1, 1, 32)
-    // const material = new THREE.MeshBasicMaterial({ wireframe: true })
-    // meshComponent.mesh.geometry = geometry
-    // meshComponent.mesh.material = material
     entity.addComponent(meshComponent)
 
-    if (mesh.animations && mesh.animations.length > 0) {
-      // For VRM models, the mixer needs to target the VRM scene (first child), not the wrapper mesh
-      // This is because the animation tracks target bones inside the VRM scene
-      const animationRoot = mesh.children.length > 0 ? mesh.children[0] : mesh
-      console.log(`ServerMeshSystem: Adding AnimationComponent for entity ${entity.id} with ${mesh.animations.length} animations`)
-      console.log(`Animation names: ${mesh.animations.map(a => a.name).join(', ')}`)
-      console.log(`Animation root has ${(animationRoot as THREE.Object3D).children?.length || 0} children`)
+    if (loadResult.animations && loadResult.animations.length > 0) {
+      // For VRM models, the AnimationMixer must target vrm.scene where normalized bones live
+      // This is CRITICAL - animations target normalized bone names which are children of vrm.scene
+      let animationRoot: THREE.Object3D
+
+      if (loadResult.vrm) {
+        // VRM model - use vrm.scene as animation root
+        animationRoot = loadResult.vrm.scene
+        console.log(`ServerMeshSystem: VRM entity ${entity.id} - AnimationMixer will target vrm.scene`)
+      } else {
+        // Regular GLTF - use first child or mesh itself
+        animationRoot = loadResult.mesh.children.length > 0 ? loadResult.mesh.children[0] : loadResult.mesh
+      }
+
+      console.log(`ServerMeshSystem: Adding AnimationComponent for entity ${entity.id} with ${loadResult.animations.length} animations`)
+      console.log(`Animation names: ${loadResult.animations.map(a => a.name).join(', ')}`)
+
+      // Pass the VRM instance to AnimationComponent for humanoid.update() calls
       entity.addComponent(
-        new AnimationComponent(entity.id, animationRoot as THREE.Mesh, meshComponent.mesh.animations)
+        new AnimationComponent(
+          entity.id,
+          animationRoot,
+          loadResult.animations,
+          loadResult.vrm
+        )
       )
     } else {
       console.log(`ServerMeshSystem: No animations for entity ${entity.id}, type=${entity.type}`)

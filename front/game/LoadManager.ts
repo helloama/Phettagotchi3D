@@ -6,8 +6,15 @@ import { VRMLoaderPlugin, VRM, VRMHumanBoneName } from '@pixiv/three-vrm'
 import { createVRMAnimationClip, VRMAnimationLoaderPlugin } from '@pixiv/three-vrm-animation'
 
 // Extended mesh type that can hold VRM data
-interface VRMMesh extends THREE.Mesh {
+export interface VRMMesh extends THREE.Mesh {
   vrm?: VRM
+}
+
+// Result type for glTFLoad that includes VRM if present
+export interface LoadResult {
+  mesh: THREE.Mesh
+  vrm: VRM | null
+  animations: THREE.AnimationClip[]
 }
 
 // Animation file paths for VRM models
@@ -75,23 +82,24 @@ const mixamoVRMRigMap: Record<string, VRMHumanBoneName> = {
   mixamorigRightToeBase: 'rightToes',
 }
 
+// Reusable quaternion objects for retargeting
+const q1 = new THREE.Quaternion()
+const restRotationInverse = new THREE.Quaternion()
+const parentRestWorldRotation = new THREE.Quaternion()
+
 export class LoadManager {
   private static instance: LoadManager
   private cache = new Map<string, THREE.Mesh>()
-  private vrmCache = new Map<string, VRM>()
-  private animationCache = new Map<string, THREE.AnimationClip>()
-  private rawAnimationCache = new Map<string, any>() // Store raw animation data for VRM conversion
+  private rawAnimationCache = new Map<string, any>()
   dracoLoader = new DRACOLoader()
   gltfLoader = new GLTFLoader()
-  animLoader = new GLTFLoader() // Separate loader for animations with VRM animation plugin
+  animLoader = new GLTFLoader()
 
   private constructor() {
     this.dracoLoader.setDecoderPath('/draco/')
     this.gltfLoader.setDRACOLoader(this.dracoLoader)
-    // Register VRM loader plugin
     this.gltfLoader.register((parser) => new VRMLoaderPlugin(parser))
 
-    // Animation loader with VRM animation plugin
     this.animLoader.setDRACOLoader(this.dracoLoader)
     this.animLoader.register((parser) => new VRMAnimationLoaderPlugin(parser))
   }
@@ -103,7 +111,6 @@ export class LoadManager {
     return LoadManager.instance
   }
 
-  // Load a single animation file and return the raw GLTF for VRM conversion
   private async loadAnimationGLTF(name: string, path: string): Promise<any | null> {
     if (this.rawAnimationCache.has(name)) {
       return this.rawAnimationCache.get(name)
@@ -131,96 +138,96 @@ export class LoadManager {
     })
   }
 
-  // Retarget a Mixamo animation clip to work with a VRM model
-  private retargetMixamoClipToVRM(clip: THREE.AnimationClip, vrm: VRM): THREE.AnimationClip {
-    const tracks: THREE.KeyframeTrack[] = []
-
-    // Get the rest rotation of the hips for offset calculation
-    const restRotationInverse = new THREE.Quaternion()
-    const parentRestWorldRotation = new THREE.Quaternion()
-    const hipsNode = vrm.humanoid?.getNormalizedBoneNode('hips')
-
-    console.log(`Retargeting clip "${clip.name}" with ${clip.tracks.length} tracks`)
-
-    if (hipsNode) {
-      hipsNode.getWorldQuaternion(restRotationInverse).invert()
-      if (hipsNode.parent) {
-        hipsNode.parent.getWorldQuaternion(parentRestWorldRotation)
-      }
+  /**
+   * Retarget a Mixamo animation to VRM using the hyperscape approach
+   * Key insight: We must get the normalized bone node name and use that for tracks
+   */
+  private retargetMixamoClipToVRM(
+    gltf: any,
+    vrm: VRM
+  ): THREE.AnimationClip | null {
+    if (!gltf.animations || gltf.animations.length === 0) {
+      return null
     }
 
-    // Process each track in the animation
-    for (const track of clip.tracks) {
-      // Extract the bone name from the track name (format: "boneName.property")
+    const clip = gltf.animations[0].clone()
+
+    // Filter tracks - keep only quaternions and root position
+    clip.tracks = clip.tracks.filter((track: THREE.KeyframeTrack) => {
+      if (track instanceof THREE.VectorKeyframeTrack) {
+        const [name, type] = track.name.split('.')
+        if (type !== 'position') return false
+        if (name === 'mixamorigHips') return true
+        return false
+      }
+      return true
+    })
+
+    // Get rest rotations for retargeting (from pixiv/three-vrm PR #1032)
+    clip.tracks.forEach((track: THREE.KeyframeTrack) => {
       const trackSplitted = track.name.split('.')
-      const mixamoBoneName = trackSplitted[0]
-      const property = trackSplitted[1]
+      const mixamoRigName = trackSplitted[0]
+      const mixamoRigNode = gltf.scene.getObjectByName(mixamoRigName)
 
-      // Skip if not a mapped bone
-      const vrmBoneName = mixamoVRMRigMap[mixamoBoneName]
-      if (!vrmBoneName) continue
-
-      // Get the VRM bone node
-      const vrmBoneNode = vrm.humanoid?.getNormalizedBoneNode(vrmBoneName)
-      if (!vrmBoneNode) {
-        console.warn(`VRM bone not found for: ${vrmBoneName}`)
-        continue
+      if (!mixamoRigNode || !mixamoRigNode.parent) {
+        return
       }
 
-      const vrmNodeName = vrmBoneNode.name
+      mixamoRigNode.getWorldQuaternion(restRotationInverse).invert()
+      mixamoRigNode.parent.getWorldQuaternion(parentRestWorldRotation)
 
-      if (property === 'position' && vrmBoneName === 'hips') {
-        // Handle hips position (root motion)
-        const values = (track as THREE.VectorKeyframeTrack).values.slice()
-
-        // Scale and adjust position values
-        for (let i = 0; i < values.length; i += 3) {
-          // Convert from Mixamo scale to VRM scale (Mixamo is in cm, VRM is in m)
-          values[i] *= 0.01  // x
-          values[i + 1] *= 0.01  // y
-          values[i + 2] *= 0.01  // z
+      if (track instanceof THREE.QuaternionKeyframeTrack) {
+        for (let i = 0; i < track.values.length; i += 4) {
+          const flatQuaternion = track.values.slice(i, i + 4)
+          q1.fromArray(flatQuaternion)
+          q1.premultiply(parentRestWorldRotation).multiply(restRotationInverse)
+          q1.toArray(flatQuaternion)
+          flatQuaternion.forEach((v, index) => {
+            track.values[index + i] = v
+          })
         }
-
-        tracks.push(new THREE.VectorKeyframeTrack(
-          `${vrmNodeName}.position`,
-          track.times,
-          values
-        ))
-      } else if (property === 'quaternion') {
-        // Handle rotation
-        const values = (track as THREE.QuaternionKeyframeTrack).values.slice()
-
-        for (let i = 0; i < values.length; i += 4) {
-          const quat = new THREE.Quaternion(values[i], values[i + 1], values[i + 2], values[i + 3])
-
-          if (vrmBoneName === 'hips') {
-            // Special handling for hips rotation
-            quat.premultiply(parentRestWorldRotation).premultiply(restRotationInverse)
-          }
-
-          values[i] = quat.x
-          values[i + 1] = quat.y
-          values[i + 2] = quat.z
-          values[i + 3] = quat.w
-        }
-
-        tracks.push(new THREE.QuaternionKeyframeTrack(
-          `${vrmNodeName}.quaternion`,
-          track.times,
-          values
-        ))
       }
-      // Skip scale tracks as VRM handles scaling differently
+    })
+
+    clip.optimize()
+
+    // Retarget tracks to VRM skeleton using normalized bone names
+    const retargetedTracks: THREE.KeyframeTrack[] = []
+
+    clip.tracks.forEach((track: THREE.KeyframeTrack) => {
+      const trackSplitted = track.name.split('.')
+      const ogBoneName = trackSplitted[0]
+      const vrmBoneName = mixamoVRMRigMap[ogBoneName]
+
+      if (!vrmBoneName) return
+
+      // Get the normalized bone node from the VRM humanoid
+      const normalizedNode = vrm.humanoid?.getNormalizedBoneNode(vrmBoneName)
+      if (!normalizedNode) return
+
+      const vrmNodeName = normalizedNode.name
+      const propertyName = trackSplitted[1]
+
+      if (track instanceof THREE.QuaternionKeyframeTrack) {
+        retargetedTracks.push(
+          new THREE.QuaternionKeyframeTrack(
+            `${vrmNodeName}.${propertyName}`,
+            track.times,
+            track.values
+          )
+        )
+      }
+      // Skip position tracks to prevent root motion issues
+    })
+
+    console.log(`Retargeted clip has ${retargetedTracks.length} tracks`)
+    if (retargetedTracks.length > 0) {
+      console.log(`First track targets: ${retargetedTracks[0].name}`)
     }
 
-    console.log(`Retargeted clip "${clip.name}" has ${tracks.length} tracks`)
-    if (tracks.length > 0) {
-      console.log(`First track targets: ${tracks[0].name}`)
-    }
-    return new THREE.AnimationClip(clip.name, clip.duration, tracks)
+    return new THREE.AnimationClip(clip.name, clip.duration, retargetedTracks)
   }
 
-  // Load all VRM animations and convert them for a specific VRM
   private async loadVRMAnimations(vrm: VRM): Promise<THREE.AnimationClip[]> {
     const animations: THREE.AnimationClip[] = []
 
@@ -235,92 +242,120 @@ export class LoadManager {
           animations.push(clip)
           console.log(`Converted VRM animation: ${name}`)
         }
-      } else if (gltf && gltf.animations && gltf.animations.length > 0) {
-        // Retarget Mixamo animation to VRM
-        const mixamoClip = gltf.animations[0]
-        const retargetedClip = this.retargetMixamoClipToVRM(mixamoClip, vrm)
-        retargetedClip.name = name
-        animations.push(retargetedClip)
-        console.log(`Retargeted Mixamo animation to VRM: ${name}`)
+      } else if (gltf) {
+        // Retarget Mixamo animation to VRM using hyperscape approach
+        const retargetedClip = this.retargetMixamoClipToVRM(gltf, vrm)
+        if (retargetedClip) {
+          retargetedClip.name = name
+          animations.push(retargetedClip)
+          console.log(`Retargeted Mixamo animation to VRM: ${name}`)
+        }
       }
     }
 
     return animations
   }
 
-  static async glTFLoad(path: string): Promise<THREE.Mesh> {
+  /**
+   * Load a glTF/VRM model and return both the mesh and VRM instance
+   * For VRM models, animations are retargeted to normalized bones
+   */
+  static async glTFLoadWithVRM(path: string): Promise<LoadResult> {
     const instance = LoadManager.getInstance()
     const isVRM = path.toLowerCase().endsWith('.vrm')
 
-    // Check if the mesh is already in the cache
+    // For VRM models, always load fresh to get a unique VRM instance
+    // This is necessary because VRM humanoid can't be easily cloned
+    if (isVRM) {
+      return new Promise((resolve, reject) => {
+        instance.gltfLoader.load(
+          path,
+          async (gltf) => {
+            const vrm = (gltf.userData as { vrm?: VRM }).vrm
+
+            if (vrm) {
+              console.log('VRM model loaded:', vrm)
+
+              // VRM 1.0+ models face +Z, rotate to face -Z (game forward)
+              vrm.scene.rotation.y = Math.PI
+
+              // Load and retarget animations for this VRM instance
+              const animations = await instance.loadVRMAnimations(vrm)
+              console.log(`Loaded ${animations.length} animations for VRM`)
+
+              // Create wrapper mesh
+              const mesh: VRMMesh = new THREE.Mesh()
+              mesh.add(vrm.scene)
+              mesh.animations = animations
+              mesh.vrm = vrm
+
+              resolve({
+                mesh,
+                vrm,
+                animations
+              })
+            } else {
+              reject(new Error('VRM not found in loaded file'))
+            }
+          },
+          undefined,
+          (error) => {
+            console.error('Failed to load VRM:', error)
+            reject(error)
+          }
+        )
+      })
+    }
+
+    // For non-VRM models, use caching
     if (instance.cache.has(path)) {
       const cachedMesh = instance.cache.get(path)!
       const clonedMesh = instance.cloneMesh(cachedMesh)
-      return clonedMesh
+      return {
+        mesh: clonedMesh,
+        vrm: null,
+        animations: clonedMesh.animations
+      }
     }
 
-    // Load the model
     return new Promise((resolve, reject) => {
       instance.gltfLoader.load(
         path,
-        async (gltf) => {
-          // Check if this is a VRM model
-          const vrm = (gltf.userData as { vrm?: VRM }).vrm
-
-          if (vrm && isVRM) {
-            // VRM model loaded
-            console.log('VRM model loaded:', vrm)
-
-            // Rotate the VRM model to face forward (VRM models face +Z by default)
-            vrm.scene.rotation.y = Math.PI
-
-            // Load external animations for VRM, converted for this specific VRM
-            const animations = await instance.loadVRMAnimations(vrm)
-            console.log(`Loaded ${animations.length} animations for VRM`)
-
-            // Create mesh wrapper for VRM with loaded animations
-            const mesh = instance.extractVRMMesh(vrm, animations)
-            if (mesh) {
-              instance.cache.set(path, mesh)
-              instance.vrmCache.set(path, vrm)
-              const clonedMesh = instance.cloneMesh(mesh)
-              resolve(clonedMesh)
-            } else {
-              reject(new Error('No mesh found in VRM model'))
-            }
+        (gltf) => {
+          const mesh = instance.extractMesh(gltf)
+          if (mesh) {
+            instance.cache.set(path, mesh)
+            const clonedMesh = instance.cloneMesh(mesh)
+            resolve({
+              mesh: clonedMesh,
+              vrm: null,
+              animations: clonedMesh.animations
+            })
           } else {
-            // Regular GLTF model
-            const mesh = instance.extractMesh(gltf)
-            if (mesh) {
-              instance.cache.set(path, mesh)
-              const clonedMesh = instance.cloneMesh(mesh)
-              resolve(clonedMesh)
-            } else {
-              reject(new Error('No mesh found in the GLTF model'))
-            }
+            reject(new Error('No mesh found in GLTF model'))
           }
         },
-        (xhr) => {
-          console.log((xhr.loaded / xhr.total) * 100 + '% loaded')
-        },
+        undefined,
         (error) => {
-          console.error('An error happened', error)
+          console.error('Failed to load GLTF:', error)
           reject(error)
         }
       )
     })
   }
 
-  // Get VRM instance for a loaded model (for advanced VRM features)
-  static getVRM(path: string): VRM | undefined {
-    const instance = LoadManager.getInstance()
-    return instance.vrmCache.get(path)
+  /**
+   * Legacy method - kept for backward compatibility
+   * Use glTFLoadWithVRM for VRM models to get VRM instance
+   */
+  static async glTFLoad(path: string): Promise<THREE.Mesh> {
+    const result = await LoadManager.glTFLoadWithVRM(path)
+    return result.mesh
   }
 
   private cloneMesh(mesh: THREE.Mesh): THREE.Mesh {
     const clonedMesh = SkeletonUtils.clone(mesh)
     clonedMesh.animations = mesh.animations.map(clip => clip.clone())
-    // Clone materials to avoid sharing the same material instance
     clonedMesh.traverse((child) => {
       if (child instanceof THREE.Mesh) {
         const material = child.material
@@ -335,17 +370,9 @@ export class LoadManager {
   }
 
   private extractMesh(gltf: any): THREE.Mesh | null {
-    let mesh: THREE.Mesh = new THREE.Mesh()
+    const mesh: THREE.Mesh = new THREE.Mesh()
     mesh.add(gltf.scene)
     mesh.animations = gltf.animations
-    return mesh
-  }
-
-  private extractVRMMesh(vrm: VRM, animations: THREE.AnimationClip[]): THREE.Mesh | null {
-    let mesh: VRMMesh = new THREE.Mesh()
-    mesh.add(vrm.scene)
-    mesh.animations = animations
-    mesh.vrm = vrm
     return mesh
   }
 }
