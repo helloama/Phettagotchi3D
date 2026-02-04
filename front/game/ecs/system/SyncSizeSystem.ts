@@ -16,12 +16,18 @@ export class SyncSizeSystem {
       }
 
       const singleSizeComponent = entity.getComponent(SingleSizeComponent)
-      if (singleSizeComponent && singleSizeComponent.updated) {
-        meshComponent.mesh.scale.set(
-          singleSizeComponent.size,
-          singleSizeComponent.size,
-          singleSizeComponent.size
-        )
+      if (singleSizeComponent) {
+        // Apply size if updated OR if scale is still at default (1,1,1) - handles initial load
+        const isDefaultScale = meshComponent.mesh.scale.x === 1 &&
+                               meshComponent.mesh.scale.y === 1 &&
+                               meshComponent.mesh.scale.z === 1
+        if (singleSizeComponent.updated || isDefaultScale) {
+          meshComponent.mesh.scale.set(
+            singleSizeComponent.size,
+            singleSizeComponent.size,
+            singleSizeComponent.size
+          )
+        }
       }
     }
   }

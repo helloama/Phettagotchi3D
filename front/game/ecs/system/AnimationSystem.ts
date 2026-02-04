@@ -20,6 +20,12 @@ export class AnimationSystem {
           // Find the animation that corresponds to the current state
           const requestAnimationName = stateComponent.state
 
+          // Debug: Log available animations
+          if (animations.length === 0) {
+            console.warn(`No animations for entity ${entity.id}`)
+          }
+
+          let foundAnimation = false
           for (const clip of animations) {
             const action = animationComponent.mixer.clipAction(clip)
             if (clip.name !== requestAnimationName) {
@@ -27,12 +33,17 @@ export class AnimationSystem {
               action.fadeOut(0.2)
             } else {
               // Fade in and play the animation corresponding to the current state
+              foundAnimation = true
               action.reset()
 
               action.fadeIn(0.1)
 
               action.play()
             }
+          }
+
+          if (!foundAnimation && animations.length > 0) {
+            console.warn(`Animation "${requestAnimationName}" not found. Available: ${animations.map(a => a.name).join(', ')}`)
           }
         }
 
