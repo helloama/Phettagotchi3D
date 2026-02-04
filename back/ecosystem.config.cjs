@@ -9,7 +9,9 @@ module.exports = {
         GAME_SCRIPT: 'defaultScript.js',
         GAME_TICKRATE: 20,
         PLAYER_AVATAR_URL: '/assets/avatars/phettav5.vrm',
-        FRONTEND_URL: 'https://3d.phetta.lol'
+        FRONTEND_URL: 'https://3d.phetta.lol',
+        SSL_KEY_FILE: '/etc/letsencrypt/live/api.phetta.lol/privkey.pem',
+        SSL_CERT_FILE: '/etc/letsencrypt/live/api.phetta.lol/fullchain.pem'
       }
     },
     {
@@ -21,7 +23,9 @@ module.exports = {
         GAME_SCRIPT: 'parkourScript.js',
         GAME_TICKRATE: 20,
         PLAYER_AVATAR_URL: '/assets/avatars/phettav5.vrm',
-        FRONTEND_URL: 'https://3d.phetta.lol'
+        FRONTEND_URL: 'https://3d.phetta.lol',
+        SSL_KEY_FILE: '/etc/letsencrypt/live/api.phetta.lol/privkey.pem',
+        SSL_CERT_FILE: '/etc/letsencrypt/live/api.phetta.lol/fullchain.pem'
       }
     },
     {
@@ -33,7 +37,9 @@ module.exports = {
         GAME_SCRIPT: 'footballScript.js',
         GAME_TICKRATE: 20,
         PLAYER_AVATAR_URL: '/assets/avatars/phettav5.vrm',
-        FRONTEND_URL: 'https://3d.phetta.lol'
+        FRONTEND_URL: 'https://3d.phetta.lol',
+        SSL_KEY_FILE: '/etc/letsencrypt/live/api.phetta.lol/privkey.pem',
+        SSL_CERT_FILE: '/etc/letsencrypt/live/api.phetta.lol/fullchain.pem'
       }
     },
     {
@@ -45,7 +51,9 @@ module.exports = {
         GAME_SCRIPT: 'petSimulatorScript.js',
         GAME_TICKRATE: 20,
         PLAYER_AVATAR_URL: '/assets/avatars/phettav5.vrm',
-        FRONTEND_URL: 'https://3d.phetta.lol'
+        FRONTEND_URL: 'https://3d.phetta.lol',
+        SSL_KEY_FILE: '/etc/letsencrypt/live/api.phetta.lol/privkey.pem',
+        SSL_CERT_FILE: '/etc/letsencrypt/live/api.phetta.lol/fullchain.pem'
       }
     }
   ]
