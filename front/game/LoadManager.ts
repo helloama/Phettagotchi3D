@@ -249,100 +249,109 @@ export class LoadManager {
 
   /**
    * Retarget animation clip to VRM using the pixiv/three-vrm approach
-   * Based on: https://github.com/pixiv/three-vrm/blob/dev/packages/three-vrm-core/examples/loadMixamoAnimation.js
+   * Based on: https://github.com/pixiv/three-vrm/blob/dev/packages/three-vrm-core/examples/humanoidAnimation/loadMixamoAnimation.js
    */
   private retargetBlenderClipToVRM(
     clip: THREE.AnimationClip,
     gltf: any,
     vrm: VRM
   ): THREE.AnimationClip | null {
-    const retargetedTracks: THREE.KeyframeTrack[] = []
+    const tracks: THREE.KeyframeTrack[] = []
 
-    // Process each track
-    for (const track of clip.tracks) {
-      const trackSplitted = track.name.split('.')
-      const sourceBoneName = trackSplitted[0]
-      const propertyName = trackSplitted[1]
+    const restRotationInverse = new THREE.Quaternion()
+    const parentRestWorldRotation = new THREE.Quaternion()
+    const _quatA = new THREE.Quaternion()
 
-      // Skip non-quaternion tracks (except hips position)
-      if (propertyName === 'position') {
-        const isHips = sourceBoneName.toLowerCase().includes('hip') ||
-                       sourceBoneName.toLowerCase() === 'root'
-        if (!isHips) continue
+    // Log source animation bone names for debugging (first time only)
+    const sourceBones: string[] = []
+    gltf.scene.traverse((obj: THREE.Object3D) => {
+      if (obj.type === 'Bone') sourceBones.push(obj.name)
+    })
+    console.log(`[Retarget] Source bones in ${clip.name}:`, sourceBones.slice(0, 8))
 
-        // For hips position, scale and rename
-        const vrmBoneName = boneNameToVRMBone[sourceBoneName]
-        if (vrmBoneName) {
-          const normalizedNode = vrm.humanoid?.getNormalizedBoneNode(vrmBoneName)
-          if (normalizedNode) {
-            // Scale position values (Mixamo uses different scale)
-            const scaledValues = new Float32Array(track.values.length)
-            for (let i = 0; i < track.values.length; i++) {
-              scaledValues[i] = track.values[i] * 0.01 // Mixamo to VRM scale
-            }
-            retargetedTracks.push(
-              new THREE.VectorKeyframeTrack(
-                `${normalizedNode.name}.position`,
-                track.times,
-                scaledValues
-              )
-            )
-          }
-        }
-        continue
+    // Find hips bone in source animation for height scaling
+    let motionHipsHeight = 1
+    const hipsNames = ['mixamorigHips', 'Hips', 'hips', 'DEF-hips', 'Root', 'root']
+    for (const name of hipsNames) {
+      const hips = gltf.scene.getObjectByName(name)
+      if (hips) {
+        motionHipsHeight = hips.position.y
+        console.log(`[Retarget] Found motion hips "${name}" at height: ${motionHipsHeight}`)
+        break
       }
-
-      if (propertyName !== 'quaternion') continue
-
-      // Map source bone to VRM bone
-      const vrmBoneName = boneNameToVRMBone[sourceBoneName]
-      if (!vrmBoneName) continue
-
-      const normalizedNode = vrm.humanoid?.getNormalizedBoneNode(vrmBoneName)
-      if (!normalizedNode) continue
-
-      // Get source bone from animation GLB
-      const sourceBone = gltf.scene.getObjectByName(sourceBoneName)
-      if (!sourceBone) continue
-
-      // Get rest pose rotations
-      const sourceRestQuat = new THREE.Quaternion()
-      const sourceParentRestQuat = new THREE.Quaternion()
-
-      sourceBone.getWorldQuaternion(sourceRestQuat)
-      if (sourceBone.parent) {
-        sourceBone.parent.getWorldQuaternion(sourceParentRestQuat)
-      }
-
-      // Process each keyframe
-      const newValues = new Float32Array(track.values.length)
-      const tempQuat = new THREE.Quaternion()
-      const sourceRestQuatInv = sourceRestQuat.clone().invert()
-
-      for (let i = 0; i < track.values.length; i += 4) {
-        // Get the animated rotation
-        tempQuat.fromArray(track.values, i)
-
-        // Remove source skeleton's rest pose: result = parentWorld * animated * restInverse
-        // This gives us the "delta" rotation from rest pose
-        tempQuat.premultiply(sourceParentRestQuat).multiply(sourceRestQuatInv)
-
-        tempQuat.toArray(newValues, i)
-      }
-
-      retargetedTracks.push(
-        new THREE.QuaternionKeyframeTrack(
-          `${normalizedNode.name}.quaternion`,
-          track.times,
-          newValues
-        )
-      )
     }
 
-    if (retargetedTracks.length > 0) {
-      const retargetedClip = new THREE.AnimationClip(clip.name, clip.duration, retargetedTracks)
-      console.log(`[Retarget] ${clip.name}: ${retargetedTracks.length} tracks`)
-      return retargetedClip
+    // Get VRM hips height from normalized rest pose
+    const vrmHipsY = vrm.humanoid?.normalizedRestPose?.hips?.position?.[1] ?? 1
+    const hipsPositionScale = vrmHipsY / motionHipsHeight
+    console.log(`[Retarget] VRM hips height: ${vrmHipsY}, scale: ${hipsPositionScale}`)
+
+    // Check VRM version for quaternion handling
+    const isVRM0 = vrm.meta?.metaVersion === '0'
+    console.log(`[Retarget] VRM version: ${isVRM0 ? '0.x' : '1.x'}`)
+
+    clip.tracks.forEach((track) => {
+      const trackSplitted = track.name.split('.')
+      const mixamoRigName = trackSplitted[0]
+      const vrmBoneName = boneNameToVRMBone[mixamoRigName]
+      const vrmNodeName = vrm.humanoid?.getNormalizedBoneNode(vrmBoneName)?.name
+      const mixamoRigNode = gltf.scene.getObjectByName(mixamoRigName)
+
+      if (vrmNodeName != null && mixamoRigNode != null) {
+        const propertyName = trackSplitted[1]
+
+        // Store rotations of rest-pose
+        mixamoRigNode.getWorldQuaternion(restRotationInverse).invert()
+        if (mixamoRigNode.parent) {
+          mixamoRigNode.parent.getWorldQuaternion(parentRestWorldRotation)
+        } else {
+          parentRestWorldRotation.identity()
+        }
+
+        if (track instanceof THREE.QuaternionKeyframeTrack) {
+          // Retarget rotation of mixamoRig to NormalizedBone
+          const newValues = new Float32Array(track.values.length)
+
+          for (let i = 0; i < track.values.length; i += 4) {
+            _quatA.fromArray(track.values, i)
+
+            // parentRestWorld * trackRotation * restWorldInverse
+            _quatA.premultiply(parentRestWorldRotation).multiply(restRotationInverse)
+
+            _quatA.toArray(newValues, i)
+          }
+
+          // For VRM 0.x, negate x and z components
+          const finalValues = isVRM0
+            ? newValues.map((v, i) => (i % 2 === 0 ? -v : v))
+            : newValues
+
+          tracks.push(
+            new THREE.QuaternionKeyframeTrack(
+              `${vrmNodeName}.${propertyName}`,
+              track.times,
+              finalValues
+            )
+          )
+        } else if (track instanceof THREE.VectorKeyframeTrack) {
+          // Scale and optionally flip position values
+          const value = track.values.map((v, i) =>
+            (isVRM0 && i % 3 !== 1 ? -v : v) * hipsPositionScale
+          )
+          tracks.push(
+            new THREE.VectorKeyframeTrack(
+              `${vrmNodeName}.${propertyName}`,
+              track.times,
+              value
+            )
+          )
+        }
+      }
+    })
+
+    if (tracks.length > 0) {
+      console.log(`[Retarget] ${clip.name}: ${tracks.length} tracks retargeted`)
+      return new THREE.AnimationClip(clip.name, clip.duration, tracks)
     }
 
     console.error(`[Retarget] No tracks retargeted for ${clip.name}`)
