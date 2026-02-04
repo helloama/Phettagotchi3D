@@ -66,6 +66,7 @@ export class WebsocketSystem {
 
   private initializeServer() {
     const isProduction = process.env.NODE_ENV === 'production'
+    const sslEnabled = process.env.SSL_ENABLED !== 'false'
     const acceptedOrigin: string | undefined = process.env.FRONTEND_URL
     const sslKeyFile: string = process.env.SSL_KEY_FILE || '/etc/letsencrypt/live/npm-3/privkey.pem'
     const sslCertFile: string = process.env.SSL_CERT_FILE || '/etc/letsencrypt/live/npm-3/cert.pem'
@@ -80,7 +81,11 @@ export class WebsocketSystem {
       console.log('FRONTEND_URL : Only accepting connections from origin:', acceptedOrigin)
     }
 
-    const app = isProduction
+    // Use SSLApp only if production AND SSL is enabled (not behind a reverse proxy)
+    const useSSL = isProduction && sslEnabled
+    console.log('SSL_ENABLED :', useSSL ? 'Using SSL directly' : 'SSL disabled (behind reverse proxy)')
+
+    const app = useSSL
       ? SSLApp({
           key_file_name: sslKeyFile,
           cert_file_name: sslCertFile,
