@@ -1,4 +1,5 @@
 import { Entity } from '@shared/entity/Entity'
+import * as THREE from 'three'
 import { MeshComponent } from '../component/MeshComponent'
 import { EventSystem } from '@shared/system/EventSystem'
 import { ComponentAddedEvent } from '@shared/component/events/ComponentAddedEvent'
