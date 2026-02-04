@@ -1,7 +1,7 @@
 import GameCard from '@/components/GameCard'
 import KeyboardLayout from '@/components/KeyboardLayout'
 import Navbar from '@/components/Navbar'
-import { ExternalLink, Github, Twitter, Gamepad2 } from 'lucide-react'
+import { Github, Twitter, Gamepad2 } from 'lucide-react'
 import Link from 'next/link'
 import { GameInfo } from '../types'
 import gameData from '../public/gameData.json'
