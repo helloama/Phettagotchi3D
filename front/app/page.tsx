@@ -21,8 +21,8 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     twitter: {
       card: 'summary_large_image',
-      site: '@iercan_',
-      creator: '@iercan_',
+      site: '@em0tionull',
+      creator: '@em0tionull',
     },
   }
 }
@@ -126,7 +126,7 @@ export default async function Home() {
         <div className="p-6">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <Link
-              href={'https://discord.gg/kPhgtj49U2'}
+              href={'https://discord.gg/c68KnzNvUm'}
               className="flex py-3 items-center justify-center px-6 font-['VT323'] text-xl bg-[#5865F2]/20 hover:bg-[#5865F2]/40 border border-[#5865F2]/50 rounded-lg transition-all duration-200 text-[#5865F2]"
             >
               <svg
@@ -139,18 +139,18 @@ export default async function Home() {
               Discord
             </Link>
             <Link
-              href={'https://twitter.com/iErcan_'}
+              href={'https://x.com/em0tionull'}
               className="flex py-3 items-center justify-center px-6 font-['VT323'] text-xl bg-sky-500/20 hover:bg-sky-500/40 border border-sky-500/50 rounded-lg transition-all duration-200 text-sky-400"
             >
               <Twitter className="mr-2 h-5 w-5" />
               Twitter
             </Link>
             <Link
-              href={'https://github.com/iErcann/Notblox'}
-              className="flex py-3 items-center justify-center px-6 font-['VT323'] text-xl bg-slate-500/20 hover:bg-slate-500/40 border border-slate-500/50 rounded-lg transition-all duration-200 text-slate-300"
+              href={'https://3d.phetta.lol/'}
+              className="flex py-3 items-center justify-center px-6 font-['VT323'] text-xl bg-purple-500/20 hover:bg-purple-500/40 border border-purple-500/50 rounded-lg transition-all duration-200 text-purple-300"
             >
-              <Github className="mr-2 h-5 w-5" />
-              Source Code
+              <Gamepad2 className="mr-2 h-5 w-5" />
+              Phettagotchi
             </Link>
           </div>
         </div>

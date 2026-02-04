@@ -42,7 +42,7 @@ export default function Navbar() {
           {/* Social Icons */}
           <div className="flex items-center space-x-1 ml-4">
             <a
-              href="https://discord.gg/kPhgtj49U2"
+              href="https://discord.gg/c68KnzNvUm"
               target="_blank"
               rel="noopener noreferrer"
               className="p-2 rounded-lg bg-[#5865F2]/20 hover:bg-[#5865F2]/40 border border-[#5865F2]/30 transition-all duration-200"
@@ -56,7 +56,7 @@ export default function Navbar() {
               </svg>
             </a>
             <a
-              href="https://twitter.com/iErcan_"
+              href="https://x.com/em0tionull"
               target="_blank"
               rel="noopener noreferrer"
               className="p-2 rounded-lg bg-sky-500/20 hover:bg-sky-500/40 border border-sky-500/30 transition-all duration-200"
@@ -64,7 +64,7 @@ export default function Navbar() {
               <Twitter className="h-5 w-5 text-sky-400" />
             </a>
             <a
-              href="https://github.com/iErcann/Notblox"
+              href="https://3d.phetta.lol/"
               target="_blank"
               rel="noopener noreferrer"
               className="p-2 rounded-lg bg-slate-500/20 hover:bg-slate-500/40 border border-slate-500/30 transition-all duration-200"
@@ -77,7 +77,7 @@ export default function Navbar() {
         {/* Mobile Menu Button */}
         <div className="flex md:hidden items-center space-x-2">
           <a
-            href="https://discord.gg/kPhgtj49U2"
+            href="https://discord.gg/c68KnzNvUm"
             target="_blank"
             rel="noopener noreferrer"
             className="p-2 rounded-lg bg-[#5865F2]/20 border border-[#5865F2]/30"
