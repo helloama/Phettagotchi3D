@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js'
-import { VRMLoaderPlugin, VRM } from '@pixiv/three-vrm'
+import { VRMLoaderPlugin, VRM, VRMHumanBoneName } from '@pixiv/three-vrm'
 import { createVRMAnimationClip, VRMAnimationLoaderPlugin } from '@pixiv/three-vrm-animation'
 
 // Extended mesh type that can hold VRM data
@@ -17,6 +17,62 @@ const VRM_ANIMATIONS = {
   Run: '/assets/animations/run.glb',
   Jump: '/assets/animations/jump.glb',
   Fall: '/assets/animations/fall.glb',
+}
+
+// Mixamo bone name to VRM humanoid bone name mapping
+const mixamoVRMRigMap: Record<string, VRMHumanBoneName> = {
+  mixamorigHips: 'hips',
+  mixamorigSpine: 'spine',
+  mixamorigSpine1: 'chest',
+  mixamorigSpine2: 'upperChest',
+  mixamorigNeck: 'neck',
+  mixamorigHead: 'head',
+  mixamorigLeftShoulder: 'leftShoulder',
+  mixamorigLeftArm: 'leftUpperArm',
+  mixamorigLeftForeArm: 'leftLowerArm',
+  mixamorigLeftHand: 'leftHand',
+  mixamorigLeftHandThumb1: 'leftThumbMetacarpal',
+  mixamorigLeftHandThumb2: 'leftThumbProximal',
+  mixamorigLeftHandThumb3: 'leftThumbDistal',
+  mixamorigLeftHandIndex1: 'leftIndexProximal',
+  mixamorigLeftHandIndex2: 'leftIndexIntermediate',
+  mixamorigLeftHandIndex3: 'leftIndexDistal',
+  mixamorigLeftHandMiddle1: 'leftMiddleProximal',
+  mixamorigLeftHandMiddle2: 'leftMiddleIntermediate',
+  mixamorigLeftHandMiddle3: 'leftMiddleDistal',
+  mixamorigLeftHandRing1: 'leftRingProximal',
+  mixamorigLeftHandRing2: 'leftRingIntermediate',
+  mixamorigLeftHandRing3: 'leftRingDistal',
+  mixamorigLeftHandPinky1: 'leftLittleProximal',
+  mixamorigLeftHandPinky2: 'leftLittleIntermediate',
+  mixamorigLeftHandPinky3: 'leftLittleDistal',
+  mixamorigRightShoulder: 'rightShoulder',
+  mixamorigRightArm: 'rightUpperArm',
+  mixamorigRightForeArm: 'rightLowerArm',
+  mixamorigRightHand: 'rightHand',
+  mixamorigRightHandThumb1: 'rightThumbMetacarpal',
+  mixamorigRightHandThumb2: 'rightThumbProximal',
+  mixamorigRightHandThumb3: 'rightThumbDistal',
+  mixamorigRightHandIndex1: 'rightIndexProximal',
+  mixamorigRightHandIndex2: 'rightIndexIntermediate',
+  mixamorigRightHandIndex3: 'rightIndexDistal',
+  mixamorigRightHandMiddle1: 'rightMiddleProximal',
+  mixamorigRightHandMiddle2: 'rightMiddleIntermediate',
+  mixamorigRightHandMiddle3: 'rightMiddleDistal',
+  mixamorigRightHandRing1: 'rightRingProximal',
+  mixamorigRightHandRing2: 'rightRingIntermediate',
+  mixamorigRightHandRing3: 'rightRingDistal',
+  mixamorigRightHandPinky1: 'rightLittleProximal',
+  mixamorigRightHandPinky2: 'rightLittleIntermediate',
+  mixamorigRightHandPinky3: 'rightLittleDistal',
+  mixamorigLeftUpLeg: 'leftUpperLeg',
+  mixamorigLeftLeg: 'leftLowerLeg',
+  mixamorigLeftFoot: 'leftFoot',
+  mixamorigLeftToeBase: 'leftToes',
+  mixamorigRightUpLeg: 'rightUpperLeg',
+  mixamorigRightLeg: 'rightLowerLeg',
+  mixamorigRightFoot: 'rightFoot',
+  mixamorigRightToeBase: 'rightToes',
 }
 
 export class LoadManager {
@@ -75,6 +131,86 @@ export class LoadManager {
     })
   }
 
+  // Retarget a Mixamo animation clip to work with a VRM model
+  private retargetMixamoClipToVRM(clip: THREE.AnimationClip, vrm: VRM): THREE.AnimationClip {
+    const tracks: THREE.KeyframeTrack[] = []
+
+    // Get the rest rotation of the hips for offset calculation
+    const restRotationInverse = new THREE.Quaternion()
+    const parentRestWorldRotation = new THREE.Quaternion()
+    const hipsNode = vrm.humanoid?.getNormalizedBoneNode('hips')
+
+    if (hipsNode) {
+      hipsNode.getWorldQuaternion(restRotationInverse).invert()
+      if (hipsNode.parent) {
+        hipsNode.parent.getWorldQuaternion(parentRestWorldRotation)
+      }
+    }
+
+    // Process each track in the animation
+    for (const track of clip.tracks) {
+      // Extract the bone name from the track name (format: "boneName.property")
+      const trackSplitted = track.name.split('.')
+      const mixamoBoneName = trackSplitted[0]
+      const property = trackSplitted[1]
+
+      // Skip if not a mapped bone
+      const vrmBoneName = mixamoVRMRigMap[mixamoBoneName]
+      if (!vrmBoneName) continue
+
+      // Get the VRM bone node
+      const vrmBoneNode = vrm.humanoid?.getNormalizedBoneNode(vrmBoneName)
+      if (!vrmBoneNode) continue
+
+      const vrmNodeName = vrmBoneNode.name
+
+      if (property === 'position' && vrmBoneName === 'hips') {
+        // Handle hips position (root motion)
+        const values = (track as THREE.VectorKeyframeTrack).values.slice()
+
+        // Scale and adjust position values
+        for (let i = 0; i < values.length; i += 3) {
+          // Convert from Mixamo scale to VRM scale (Mixamo is in cm, VRM is in m)
+          values[i] *= 0.01  // x
+          values[i + 1] *= 0.01  // y
+          values[i + 2] *= 0.01  // z
+        }
+
+        tracks.push(new THREE.VectorKeyframeTrack(
+          `${vrmNodeName}.position`,
+          track.times,
+          values
+        ))
+      } else if (property === 'quaternion') {
+        // Handle rotation
+        const values = (track as THREE.QuaternionKeyframeTrack).values.slice()
+
+        for (let i = 0; i < values.length; i += 4) {
+          const quat = new THREE.Quaternion(values[i], values[i + 1], values[i + 2], values[i + 3])
+
+          if (vrmBoneName === 'hips') {
+            // Special handling for hips rotation
+            quat.premultiply(parentRestWorldRotation).premultiply(restRotationInverse)
+          }
+
+          values[i] = quat.x
+          values[i + 1] = quat.y
+          values[i + 2] = quat.z
+          values[i + 3] = quat.w
+        }
+
+        tracks.push(new THREE.QuaternionKeyframeTrack(
+          `${vrmNodeName}.quaternion`,
+          track.times,
+          values
+        ))
+      }
+      // Skip scale tracks as VRM handles scaling differently
+    }
+
+    return new THREE.AnimationClip(clip.name, clip.duration, tracks)
+  }
+
   // Load all VRM animations and convert them for a specific VRM
   private async loadVRMAnimations(vrm: VRM): Promise<THREE.AnimationClip[]> {
     const animations: THREE.AnimationClip[] = []
@@ -82,7 +218,7 @@ export class LoadManager {
     for (const [name, path] of Object.entries(VRM_ANIMATIONS)) {
       const gltf = await this.loadAnimationGLTF(name, path)
       if (gltf && gltf.userData.vrmAnimations) {
-        // Use VRM animation conversion
+        // Use VRM animation conversion for .vrma files
         const vrmAnimation = gltf.userData.vrmAnimations[0]
         if (vrmAnimation) {
           const clip = createVRMAnimationClip(vrmAnimation, vrm)
@@ -91,11 +227,12 @@ export class LoadManager {
           console.log(`Converted VRM animation: ${name}`)
         }
       } else if (gltf && gltf.animations && gltf.animations.length > 0) {
-        // Fallback: use raw animation (may not work well with VRM)
-        const clip = gltf.animations[0].clone()
-        clip.name = name
-        animations.push(clip)
-        console.log(`Using raw animation (fallback): ${name}`)
+        // Retarget Mixamo animation to VRM
+        const mixamoClip = gltf.animations[0]
+        const retargetedClip = this.retargetMixamoClipToVRM(mixamoClip, vrm)
+        retargetedClip.name = name
+        animations.push(retargetedClip)
+        console.log(`Retargeted Mixamo animation to VRM: ${name}`)
       }
     }
 
