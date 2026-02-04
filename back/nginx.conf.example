@@ -1,0 +1,68 @@
+# Nginx configuration for Notblox game servers
+# Place this in /etc/nginx/sites-available/api.phetta.lol
+
+upstream game_8001 {
+    server 127.0.0.1:8001;
+}
+
+upstream game_8002 {
+    server 127.0.0.1:8002;
+}
+
+upstream game_8003 {
+    server 127.0.0.1:8003;
+}
+
+upstream game_8004 {
+    server 127.0.0.1:8004;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name api.phetta.lol;
+
+    # SSL certificates (adjust path as needed)
+    ssl_certificate /etc/letsencrypt/live/api.phetta.lol/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/api.phetta.lol/privkey.pem;
+
+    # WebSocket settings
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_read_timeout 86400;
+
+    # Test server (port 8001)
+    location /game8001 {
+        proxy_pass http://game_8001;
+    }
+
+    # Obby/Parkour (port 8002)
+    location /game8002 {
+        proxy_pass http://game_8002;
+    }
+
+    # Football (port 8003)
+    location /game8003 {
+        proxy_pass http://game_8003;
+    }
+
+    # Pet Simulator (port 8004)
+    location /game8004 {
+        proxy_pass http://game_8004;
+    }
+
+    # Health check endpoint
+    location /health {
+        proxy_pass http://game_8001/health;
+    }
+}
+
+server {
+    listen 80;
+    server_name api.phetta.lol;
+    return 301 https://$server_name$request_uri;
+}

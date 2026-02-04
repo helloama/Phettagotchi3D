@@ -80,15 +80,57 @@ The animations use Mixamo naming convention. Full mapping in `boneNameToVRMBone`
 ## Project Structure
 ```
 Notblox/
-  front/           - Next.js frontend with Three.js
+  front/           - Next.js frontend (Vercel)
     game/          - Game client code
       ecs/         - Entity Component System
-        component/ - Components (AnimationComponent, MeshComponent, etc.)
-        system/    - Systems (AnimationSystem, ServerMeshSystem, etc.)
-    public/assets/ - Static assets (animations, models)
-  back/            - Game server
-  shared/          - Shared types/components between front and back
+    public/        - Static assets
+      assets/animations/ - Animation GLB files
+      gameData.json      - Game definitions (ports, slugs)
+  back/            - Game server (DigitalOcean)
+    src/scripts/   - Game logic scripts
+    ecosystem.config.js - PM2 multi-server config
+  shared/          - Shared types/components
 ```
+
+## Multi-Server Architecture
+
+| Game | Slug | Port | Script | World Map |
+|------|------|------|--------|-----------|
+| Test | test | 8001 | defaultScript.js | FlatMap.glb |
+| Obby | obby | 8002 | parkourScript.js | Obby.glb |
+| Football | football | 8003 | footballScript.js | Stadium.glb |
+| Pet Sim | pet-simulator | 8004 | petSimulatorScript.js | PetSim.glb |
+
+### How It Works
+1. **Frontend** (`gameData.json`): Defines games with `websocketPort`
+2. **WebsocketManager**: Connects to `wss://api.phetta.lol/game{port}` in production
+3. **Nginx**: Routes `/game8001` → `localhost:8001`, etc.
+4. **PM2**: Runs 4 separate processes via `ecosystem.config.js`
+5. **Game Script**: `GAME_SCRIPT` env var tells each server which script to load
+
+### Deployment Commands
+```bash
+# On DigitalOcean server
+cd /path/to/Notblox/back
+npm run build
+pm2 start ecosystem.config.js
+pm2 save
+
+# View logs
+pm2 logs notblox-test
+pm2 logs notblox-obby
+pm2 logs notblox-football
+pm2 logs notblox-petsim
+```
+
+### Environment Variables
+**Frontend (Vercel)**:
+- `NEXT_PUBLIC_SERVER_URL=wss://api.phetta.lol`
+
+**Backend (PM2 ecosystem.config.js)**:
+- `GAME_PORT` - Which port to listen on
+- `GAME_SCRIPT` - Which script to load
+- `FRONTEND_URL` - CORS origin validation
 
 ## Common Issues & Solutions
 
