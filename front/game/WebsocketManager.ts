@@ -22,7 +22,13 @@ export class WebSocketManager {
   constructor(game: Game, port: number = 8001) {
     // Set the serverUrl based on the environment
     const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL ?? 'ws://localhost'
-    this.serverUrl = `${baseUrl}:${port}`
+    // If using WSS (production), use path-based routing; otherwise use port
+    if (baseUrl.startsWith('wss://')) {
+      this.serverUrl = `${baseUrl}/game${port}`
+    } else {
+      this.serverUrl = `${baseUrl}:${port}`
+    }
+    console.log('WebSocket URL:', this.serverUrl)
 
     this.addMessageHandler(ServerMessageType.FIRST_CONNECTION, (message) => {
       const connectionMessage = message as ConnectionMessage
