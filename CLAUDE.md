@@ -1,5 +1,35 @@
 # Claude Context - Notblox/Phettagotchi3D
 
+## Development Workflow
+
+Follow this numbered prompt cycle. User will invoke by number (1-0).
+
+| # | Name | Purpose |
+|---|------|---------|
+| 1 | Plan & Research | Analyze problem, clarify goals, identify constraints, outline architecture. Deliverable: written plan. Ask clarifying questions. |
+| 2 | Implement Plan | Execute plan step-by-step. Real code only - NO stubs, placeholders, TODOs. Handle errors/edge cases. Stop if blockers arise. |
+| 3 | Keep Going | Continue through all remaining tasks until complete. Don't stop to ask permission. Full implementation, no shortcuts. |
+| 4 | Code Quality Pass | Refactor for: Compact (no dead code), Concise (idiomatic), Clean (consistent), Capable (handles edge cases). |
+| 5 | Thorough Testing | Expand test coverage beyond happy path. Boundary conditions, error handling, integration points, async behavior. NO MOCKS - real code only. |
+| 6 | LARP Assessment | Critically evaluate if code is real or performative. Check for: stubbed functions, hardcoded values, mocked tests, swallowed errors, fake async. Fix all issues found. |
+| 7 | Clean Up Slop | Remove AI cruft: unnecessary abstractions, verbose comments, defensive code for impossible conditions, over-generic solutions, filler words. |
+| 8 | Production Readiness | Final checklist: tests pass, error handling, no hardcoded secrets, performance acceptable, dependencies pinned, rollback path, monitoring. |
+| 9 | Review Last Task | Audit: Does it work? Solve the problem? Anything skipped? Assumptions to document? What could break? Honest assessment, then fix. |
+| 0 | Fix All Remaining | List every open issue, prioritize by impact, fix each completely, verify with execution, re-run tests. Zero issues remain. |
+
+**Common sequences:**
+- Easy: `1 2 3 6 0`
+- Standard: `1 2 3 4 5 6 7 8 9 0`
+- Hard: `1 2 3 6 0 1 2 3 4 5 6 7 8 9 0`
+
+**Rules:**
+- Never stub code or use TODOs
+- No try/catch or fallbacks unless necessary
+- No mocks in tests - integration tests against real code
+- Always implement complete, production-ready code
+
+---
+
 ## Project Overview
 Multiplayer 3D game with VRM avatar support. Built with Next.js frontend, Three.js rendering, and custom ECS architecture.
 
