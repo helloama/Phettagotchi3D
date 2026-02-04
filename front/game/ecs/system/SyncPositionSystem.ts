@@ -17,12 +17,14 @@ export class SyncPositionSystem {
         // For players, offset Y position down so feet touch the ground
         // The physics capsule is centered at the position, but the VRM model
         // has its origin at the feet, so we need to offset by half the capsule height
+        // Capsule total height = 2 * (size/3) + 2 * (size/6) = size
+        // Capsule is centered, so offset down by half the total height
         let yOffset = 0
         if (entity.type === SerializedEntityType.PLAYER) {
           const sizeComponent = entity.getComponent(SingleSizeComponent)
           if (sizeComponent) {
-            // Capsule half-height offset - the physics capsule center is at positionComponent.y
-            // but the VRM mesh origin is at the feet, so offset down
+            // Physics capsule center is at positionComponent.y
+            // VRM mesh origin is at feet, so offset down by half capsule height
             yOffset = -sizeComponent.size * 0.5
           }
         }

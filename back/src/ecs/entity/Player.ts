@@ -37,8 +37,8 @@ export class Player {
     this.entity.addComponent(rotationComponent)
 
     // VRM models - scale up for visibility (VRM standard is ~1.0 = 1 meter tall)
-    // Size 4.0 makes the character roughly human-sized in the game world
-    const sizeComponent = new SingleSizeComponent(this.entity.id, 4.0)
+    // Size 6.0 makes the character roughly human-sized in the game world
+    const sizeComponent = new SingleSizeComponent(this.entity.id, 6.0)
     this.entity.addComponent(sizeComponent)
 
     // Player name text on top of the head with offset

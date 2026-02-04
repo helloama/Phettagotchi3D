@@ -50,7 +50,13 @@ export class CapsuleColliderSystem {
       )
     }
 
-    const colliderDesc = Rapier.ColliderDesc.capsule(sizeComponent.size / 2, sizeComponent.size)
+    // Rapier capsule takes (half_height, radius)
+    // Total height = 2 * half_height + 2 * radius
+    // For a player of height 'size', we want half_height ~= size/3 and radius ~= size/6
+    // This gives total height = 2*(size/3) + 2*(size/6) = size/1.5 + size/3 = size
+    const halfHeight = sizeComponent.size / 3
+    const radius = sizeComponent.size / 6
+    const colliderDesc = Rapier.ColliderDesc.capsule(halfHeight, radius)
     // Set the friction combine rule to control how friction is combined with other contacts
     colliderDesc.setFrictionCombineRule(Rapier.CoefficientCombineRule.Max)
     // Set friction to control how slippery the player is when colliding with surfaces
