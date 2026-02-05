@@ -1,4 +1,4 @@
-new MapWorld('https://notbloxo.fra1.cdn.digitaloceanspaces.com/Notblox-Assets/world/Obby.glb')
+new MapWorld('https://3d.phetta.lol/assets/obby.glb')
 
 function randomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1) + min)
