@@ -61,7 +61,7 @@ module.exports = {
         GAME_SCRIPT: 'battleDemoScript.js',
         GAME_TICKRATE: 20,
         PLAYER_AVATAR_URL: '/assets/avatars/phettav5.vrm',
-        FRONTEND_URL: 'http://localhost:4000',
+        FRONTEND_URL: 'https://3d.phetta.lol',
         SSL_ENABLED: 'false'
       }
     }
