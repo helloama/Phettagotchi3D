@@ -66,8 +66,8 @@
       "websocketPort": 8005,
       "metaDescription": "Battle VRM pets in 3D! Pokemon-style turn-based combat with real VRM models.",
       "markdown": "## ⚔️ VRM Pet Battles - Pokemon-Style Combat in 3D!\n\n**DEMO VERSION** - Battle VRM pets in full 3D with turn-based Pokemon-style combat!\n\n### Features:\n- 🎮 **Turn-Based Battles**: Strategic Pokemon-style combat\n- 🦊 **VRM Pet Models**: Real 3D VRM characters battling\n- ⚡ **Element Types**: Fire, Water, Earth, Air, Spirit with type effectiveness\n- 💥 **30+ Moves**: Each with unique effects and animations\n- 🎯 **Status Effects**: Burn, Soak, Daze, and more\n- 📊 **Damage Calculation**: Accurate Pokemon-style formula\n\n### Commands:\n- `/battle` - Start a VRM pet battle\n- `/attack` - Execute your next turn\n- `/hp` - Check current HP\n- `/help` - Show commands\n\n### How It Works:\n1. Type `/battle` to start\n2. Watch two VRM pets spawn in battle positions\n3. Type `/attack` to execute turns\n4. Battle continues until one pet faints!\n\n**This is a technical demo showing VRM models in Pokemon-style battles!**"
-    38→    },
-    39→    {
+    },
+    {
       "title": "Test Server",
       "imageUrl": "/PreviewTestGame.webp",
       "images": [
