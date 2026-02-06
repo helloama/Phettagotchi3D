@@ -45,11 +45,6 @@ async function init() {
   console.log('[BattleDemo] Arena ready! Type /battle to start a demo battle')
 }
 
-function onPlayerJoin(player) {
-  // Set spawn position above the ground
-  player.addComponent(new SpawnPositionComponent(player.id, 0, 10, 0))
-}
-
 function startBattle(playerType = 'meep', opponentType = 'redfox') {
   if (!createBattler || !initializeBattle) {
     console.error('[BattleDemo] Battle engine not loaded')
@@ -172,7 +167,22 @@ function handleCommand(playerId, command) {
 }
 
 function update(dt) {
-  // Battle logic runs on command only
+  // Get all entities (needed for EntityManager queries)
+  const entities = EntityManager.entities
+
+  // Catch new player joins via ComponentAddedEvent
+  const playerAddedEvents = EventSystem.getEventsWrapped(ComponentAddedEvent, PlayerComponent)
+
+  for (const event of playerAddedEvents) {
+    const playerId = event.entityId
+    const playerEntity = EntityManager.getEntityById(entities, playerId)
+
+    if (playerEntity) {
+      // Add spawn position component so boundary system knows where to respawn
+      playerEntity.addComponent(new SpawnPositionComponent(playerId, 0, 10, 0))
+      console.log(`[BattleDemo] Player ${playerId} joined, spawn set to (0, 10, 0)`)
+    }
+  }
 }
 
 function onMessage(playerId, message) {
