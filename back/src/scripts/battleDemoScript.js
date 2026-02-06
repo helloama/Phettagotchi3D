@@ -3,8 +3,8 @@
  * Plain JS version for sandbox execution
  */
 
-const PLAYER_PET_POS = { x: -10, y: 0, z: 0 }
-const OPPONENT_PET_POS = { x: 10, y: 0, z: 0 }
+const PLAYER_PET_POS = { x: -10, y: 1, z: 0 }
+const OPPONENT_PET_POS = { x: 10, y: 1, z: 0 }
 
 let currentBattle = null
 let playerPetCompanion = null
@@ -32,8 +32,8 @@ async function init() {
     console.error('[BattleDemo] Failed to load battle engine:', error)
   }
 
-  new MapWorld('https://notbloxo.fra1.cdn.digitaloceanspaces.com/Notblox-Assets/world/PetSim.glb')
-  battleLogEntity = new FloatingText('Battle Arena Ready!\nType /battle to start', 0, 10, 0, 150)
+  new MapWorld('https://notbloxo.fra1.cdn.digitaloceanspaces.com/Notblox-Assets/world/FlatMap.glb')
+  battleLogEntity = new FloatingText('Battle Arena Ready!\nType /battle to start', 0, 3, 0, 150)
   console.log('[BattleDemo] Arena ready! Type /battle to start a demo battle')
 }
 
