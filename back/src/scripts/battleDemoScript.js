@@ -33,8 +33,21 @@ async function init() {
   }
 
   new MapWorld('https://notbloxo.fra1.cdn.digitaloceanspaces.com/Notblox-Assets/world/FlatMap.glb')
+
+  // Create spawn cube for players to land on
+  const spawnPlatform = new Cube({
+    position: { x: 0, y: 0, z: 0 },
+    size: { width: 50, height: 1, depth: 50 },
+    color: '#228B22',
+  })
+
   battleLogEntity = new FloatingText('Battle Arena Ready!\nType /battle to start', 0, 3, 0, 150)
   console.log('[BattleDemo] Arena ready! Type /battle to start a demo battle')
+}
+
+function onPlayerJoin(player) {
+  // Set spawn position above the ground
+  player.addComponent(new SpawnPositionComponent(player.id, 0, 10, 0))
 }
 
 function startBattle(playerType = 'meep', opponentType = 'redfox') {
